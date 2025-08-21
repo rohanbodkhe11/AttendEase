@@ -40,8 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = (email: string, password: string, role: Role): boolean => {
-    const currentUsers = getUsers(); 
-    const foundUser = currentUsers.find(
+    const foundUser = users.find(
       (u) => u.email === email && u.password === password && u.role === role
     );
     if (foundUser) {
@@ -53,7 +52,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const register = (data: Omit<User, 'id' | 'avatarUrl' | 'attendance'>): boolean => {
-    // This now checks against the up-to-date state
     const existingUser = users.find(u => u.email === data.email);
 
     if (existingUser) {
@@ -67,9 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
     
     const updatedUsers = [...users, newUser];
-    // Update the state first
     setUsers(updatedUsers);
-    // Then save the updated state to storage
     saveUsers(updatedUsers);
     
     return true;
