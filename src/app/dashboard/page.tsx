@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
-import { courses, getStudentAttendance, users } from "@/lib/data";
+import { courses, getStudentAttendance, users, students } from "@/lib/data";
 import type { Course, AttendanceRecord, User } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -55,7 +55,8 @@ function DashboardSkeleton() {
 
 function FacultyDashboard({ user }: { user: User }) {
   const facultyCourses = courses.filter(c => c.facultyId === user.id);
-  const totalStudents = users.filter(u => u.role === 'student').length;
+  const facultyClasses = [...new Set(facultyCourses.map(c => c.class))];
+  const totalStudents = students.filter(s => facultyClasses.includes(s.class)).length;
 
   return (
     <>
@@ -127,7 +128,7 @@ function FacultyDashboard({ user }: { user: User }) {
 
 function StudentDashboard({ user }: { user: User }) {
   const [attendance, setAttendance] = useState<{ course: Course; records: AttendanceRecord[] }[]>([]);
-
+  
   useEffect(() => {
     if (user) {
         setAttendance(getStudentAttendance(user.id));
@@ -141,6 +142,19 @@ function StudentDashboard({ user }: { user: User }) {
   }
   
   const overallPercentage = calculateAttendancePercentage(attendance.flatMap(a => a.records));
+
+  const studentCourses = courses.filter(c => c.class === user.class);
+  
+  const getLastAbsentRecord = () => {
+    const allRecords = attendance.flatMap(a => a.records.map(r => ({...r, courseName: a.course.name})));
+    const absentRecords = allRecords.filter(r => !r.isPresent);
+    if(absentRecords.length === 0) return null;
+    absentRecords.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    return absentRecords[0];
+  }
+
+  const lastAbsent = getLastAbsentRecord();
+
 
   return (
     <>
@@ -161,7 +175,7 @@ function StudentDashboard({ user }: { user: User }) {
             <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{attendance.length}</div>
+            <div className="text-2xl font-bold">{studentCourses.length}</div>
             <p className="text-xs text-muted-foreground">Courses this semester</p>
           </CardContent>
         </Card>
@@ -171,8 +185,17 @@ function StudentDashboard({ user }: { user: User }) {
             <UserIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">Web Technology</div>
-            <p className="text-xs text-muted-foreground">on {new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toLocaleDateString()}</p>
+            {lastAbsent ? (
+                <>
+                    <div className="text-2xl font-bold">{lastAbsent.courseName}</div>
+                    <p className="text-xs text-muted-foreground">on {new Date(lastAbsent.date).toLocaleDateString()}</p>
+                </>
+            ) : (
+                <>
+                    <div className="text-2xl font-bold">-</div>
+                    <p className="text-xs text-muted-foreground">No absences recorded yet!</p>
+                </>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -181,7 +204,7 @@ function StudentDashboard({ user }: { user: User }) {
           <CardHeader>
             <CardTitle>Subject-wise Attendance</CardTitle>
             <CardDescription>Your attendance status in each course.</CardDescription>
-          </CardHeader>
+          </Header>
           <CardContent>
             <div className="space-y-6">
               {attendance.map(({ course, records }) => {
