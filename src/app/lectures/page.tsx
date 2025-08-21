@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
-import { courses as allCourses, students, users } from '@/lib/data';
+import { getCourses, students, users } from '@/lib/data';
 import type { Course, Student } from '@/lib/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,11 +22,13 @@ export default function LecturesPage() {
   const [lectureDateTime, setLectureDateTime] = useState('');
   const [currentAttendance, setCurrentAttendance] = useState<Map<string, boolean>>(new Map());
   const { toast } = useToast();
+  const [allCourses, setAllCourses] = useState<Course[]>([]);
 
   useEffect(() => {
     if (!authLoading && (!user || user.role !== 'faculty')) {
       router.push('/dashboard');
     }
+    setAllCourses(getCourses());
   }, [user, authLoading, router]);
 
   if (authLoading || !user) {

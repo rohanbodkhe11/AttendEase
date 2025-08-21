@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
-import { courses, getStudentAttendance, users, students } from "@/lib/data";
+import { getCourses, getStudentAttendance, users, students } from "@/lib/data";
 import type { Course, AttendanceRecord, User } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -54,6 +54,7 @@ function DashboardSkeleton() {
 }
 
 function FacultyDashboard({ user }: { user: User }) {
+  const courses = getCourses();
   const facultyCourses = courses.filter(c => c.facultyId === user.id);
   const facultyClasses = [...new Set(facultyCourses.map(c => c.class))];
   const totalStudents = students.filter(s => facultyClasses.includes(s.class)).length;
@@ -128,6 +129,7 @@ function FacultyDashboard({ user }: { user: User }) {
 
 function StudentDashboard({ user }: { user: User }) {
   const [attendance, setAttendance] = useState<{ course: Course; records: AttendanceRecord[] }[]>([]);
+  const courses = getCourses();
   
   useEffect(() => {
     if (user) {

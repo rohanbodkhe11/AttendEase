@@ -52,7 +52,7 @@ export const students: Student[] = [
   { id: 'student6', rollNumber: 'S06', name: 'Fiona Garcia', class: 'SY CSE A' },
 ];
 
-export const courses: Course[] = [
+let courses: Course[] = [
   {
     id: 'course1',
     name: 'Data Structures',
@@ -101,6 +101,32 @@ export const courses: Course[] = [
 
 export const pastAttendance: AttendanceRecord[] = [];
 
+// Course data management with sessionStorage
+export const getCourses = (): Course[] => {
+  try {
+    const storedCourses = sessionStorage.getItem('courses');
+    if (storedCourses) {
+      return JSON.parse(storedCourses);
+    } else {
+      sessionStorage.setItem('courses', JSON.stringify(courses));
+      return courses;
+    }
+  } catch (error) {
+    console.error("Failed to access sessionStorage for courses", error);
+    return courses;
+  }
+};
+
+export const saveCourses = (newCourses: Course[]) => {
+  try {
+    courses = newCourses;
+    sessionStorage.setItem('courses', JSON.stringify(courses));
+  } catch (error) {
+    console.error("Failed to save courses to sessionStorage", error);
+  }
+};
+
+
 const generateAttendance = () => {
   if (pastAttendance.length > 0) return; // Don't generate if already populated
   const dates: string[] = [];
@@ -108,7 +134,7 @@ const generateAttendance = () => {
     dates.push(new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
   }
 
-  courses.forEach(course => {
+  getCourses().forEach(course => {
     students.filter(s => s.class === course.class).forEach(student => {
       dates.forEach(date => {
         // Alice has good attendance, Bob has okay, Charlie is often absent
@@ -133,7 +159,7 @@ generateAttendance();
 
 // Helper functions to query data
 export const getStudentAttendance = (studentId: string): { course: Course; records: AttendanceRecord[] }[] => {
-  return courses.map(course => ({
+  return getCourses().map(course => ({
     course,
     records: pastAttendance.filter(att => att.studentId === studentId && att.courseId === course.id),
   }));

@@ -1,8 +1,9 @@
+
 "use client";
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import { courses, students, getCourseAttendance } from '@/lib/data';
+import { getCourses, students, getCourseAttendance } from '@/lib/data';
 import type { Course, Student, AttendanceRecord } from '@/lib/types';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,6 +25,7 @@ export default function CourseDetailPage({ params }: { params: { courseId: strin
   const { user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
   
+  const courses = getCourses();
   const course = courses.find((c) => c.id === params.courseId);
   const courseStudents = course ? students.filter(s => s.class === course.class) : [];
   
