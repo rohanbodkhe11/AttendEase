@@ -22,7 +22,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { notFound } from 'next/navigation';
 
 // The page is now a Server Component to safely access params
-export default async function CourseDetailPage({ params }: { params: { courseId: string } }) {
+export default function CourseDetailPage({ params }: { params: { courseId: string } }) {
   const courseId = params.courseId;
   const courses = getCourses();
   const course = courses.find((c) => c.id === courseId);
@@ -32,7 +32,7 @@ export default async function CourseDetailPage({ params }: { params: { courseId:
     notFound();
   }
 
-  // Pass the validated course and courseId to the client component.
+  // Pass the validated course to the client component.
   return <CourseDetailContent course={course} />;
 }
 
@@ -69,6 +69,7 @@ function CourseDetailContent({ course }: { course: Course }) {
   }
   
   const getUniqueDates = () => {
+    if (!attendanceRecords) return [];
     const dates = attendanceRecords.map(r => r.date);
     return [...new Set(dates)].sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
   }
@@ -148,7 +149,7 @@ function FacultyAttendanceCell({ record, onAttendanceChange } : { record: Attend
             defaultValue={record.isPresent ? 'true' : 'false'}
             onValueChange={(value: 'true' | 'false') => onAttendanceChange(record.id, value)}
         >
-            <SelectTrigger className={`w-28 h-8 text-xs ${record.isPresent ? 'bg-green-100 dark:bg-green-900' : 'bg-red-100 dark:bg-red-900'}`}>
+            <SelectTrigger className={`w-28 h-8 text-xs ${record.isPresent ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'}`}>
                 <SelectValue />
             </SelectTrigger>
             <SelectContent>
