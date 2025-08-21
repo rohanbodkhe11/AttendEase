@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -8,7 +9,7 @@ import {
   SidebarFooter,
   SidebarMenu,
   SidebarMenuItem,
-  SidebarMenuButton,
+  sidebarMenuButtonVariants,
 } from "@/components/ui/sidebar";
 import { UserNav } from "./user-nav";
 import { Logo } from "./logo";
@@ -17,6 +18,7 @@ import { useAuth } from "@/hooks/use-auth";
 import type { User } from "@/lib/types";
 import { LayoutDashboard, BookCheck, BookUser, LogOut } from "lucide-react";
 import { Button } from "../ui/button";
+import { cn } from "@/lib/utils";
 
 const facultyNavItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -53,11 +55,9 @@ export function SidebarNav({ user }: { user: User }) {
         <SidebarMenu>
           {navItems.map((item) => (
             <SidebarMenuItem key={item.href}>
-              <Link href={item.href} legacyBehavior passHref>
-                <SidebarMenuButton isActive={pathname.startsWith(item.href)}>
+              <Link href={item.href} className={cn(sidebarMenuButtonVariants({ isActive: pathname.startsWith(item.href) }))}>
                   <item.icon className="h-5 w-5" />
                   <span>{item.label}</span>
-                </SidebarMenuButton>
               </Link>
             </SidebarMenuItem>
           ))}
