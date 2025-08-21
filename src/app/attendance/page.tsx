@@ -1,10 +1,11 @@
+
 "use client";
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { courses, students, pastAttendance } from '@/lib/data';
-import type { Student, AttendanceRecord as AttendanceRecordType } from '@/lib/types';
+import type { Student, AttendanceRecord as AttendanceRecordType, Course } from '@/lib/types';
 import {
   Select,
   SelectContent,
@@ -24,9 +25,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 export default function AttendancePage() {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
-  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
-  const [currentAttendance, setCurrentAttendance] = useState<Map<string, boolean>>(new Map());
-  const { toast } = useToast();
 
   useEffect(() => {
     if (!authLoading && (!user || user.role !== 'faculty')) {
@@ -35,9 +33,78 @@ export default function AttendancePage() {
   }, [user, authLoading, router]);
 
   const facultyCourses = courses.filter(c => c.facultyId === user?.id);
-  const selectedCourse = facultyCourses.find(c => c.id === selectedCourseId);
-  const classStudents = selectedCourse ? students.filter(s => s.class === selectedCourse.class) : [];
-  
+  const theoryCourses = facultyCourses.filter(c => c.type === 'Theory');
+  const practicalCourses = facultyCourses.filter(c => c.type === 'Practical');
+
+  if (authLoading || !user) {
+    return <AttendancePageSkeleton />;
+  }
+
+  return (
+    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
+      <div className="flex items-center justify-between space-y-2">
+        <h2 className="text-3xl font-bold tracking-tight">Mark Attendance</h2>
+      </div>
+
+      <Tabs defaultValue="theory" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="theory">Theory</TabsTrigger>
+          <TabsTrigger value="practical">Practical</TabsTrigger>
+        </TabsList>
+        <TabsContent value="theory">
+            <AttendanceCourseSelector courses={theoryCourses} />
+        </TabsContent>
+        <TabsContent value="practical">
+            <AttendanceCourseSelector courses={practicalCourses} />
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
+
+function AttendanceCourseSelector({ courses }: { courses: Course[] }) {
+    const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
+
+    const selectedCourse = courses.find(c => c.id === selectedCourseId);
+    
+    useEffect(() => {
+        // Reset selected course if the course list changes
+        setSelectedCourseId(null);
+    }, [courses]);
+
+    return (
+         <div className="space-y-4">
+            <div className="max-w-sm">
+            <Label htmlFor="course-select">Select Course</Label>
+            <Select onValueChange={setSelectedCourseId} value={selectedCourseId || ""}>
+                <SelectTrigger id="course-select">
+                <SelectValue placeholder="Select a course..." />
+                </SelectTrigger>
+                <SelectContent>
+                {courses.map(course => (
+                    <SelectItem key={course.id} value={course.id}>
+                    {course.name} - {course.class}
+                    </SelectItem>
+                ))}
+                </SelectContent>
+            </Select>
+            </div>
+
+            {selectedCourse && (
+                <AttendanceContent course={selectedCourse} />
+            )}
+        </div>
+    )
+}
+
+
+function AttendanceContent({ course }: { course: Course }) {
+  const [currentAttendance, setCurrentAttendance] = useState<Map<string, boolean>>(new Map());
+  const { toast } = useToast();
+
+  const classStudents = course ? students.filter(s => s.class === course.class) : [];
+  const currentDate = new Date();
+
   const handleAttendanceChange = (studentId: string, isPresent: boolean) => {
     setCurrentAttendance(prev => new Map(prev).set(studentId, isPresent));
   };
@@ -53,93 +120,30 @@ export default function AttendancePage() {
   const handleSubmit = () => {
     toast({
       title: "Attendance Submitted",
-      description: `Attendance for ${selectedCourse?.name} has been saved.`,
+      description: `Attendance for ${course?.name} has been saved.`,
     })
     console.log("Submitted Attendance:", Array.from(currentAttendance.entries()));
     // Here you would typically send the data to your backend
   };
 
-  if (authLoading || !user) {
-    return <AttendancePageSkeleton />;
-  }
-
   const getSmartReviewInput = () => {
-    if (!selectedCourse) return null;
-    const currentDate = new Date().toISOString().split('T')[0];
+    if (!course) return null;
+    const currentDateStr = new Date().toISOString().split('T')[0];
     const currentAttendanceForReview: AttendanceRecordType[] = Array.from(currentAttendance.entries()).map(([studentId, isPresent]) => ({
         studentId,
-        date: currentDate,
+        date: currentDateStr,
         isPresent,
+        courseId: course.id,
+        id: ''
     }));
 
     return {
         currentAttendance: currentAttendanceForReview,
-        pastAttendance: pastAttendance.filter(pa => pa.courseId === selectedCourse.id),
-        classInfo: `Course: ${selectedCourse.name} (${selectedCourse.courseCode}), Class: ${selectedCourse.class}`
+        pastAttendance: pastAttendance.filter(pa => pa.courseId === course.id),
+        classInfo: `Course: ${course.name} (${course.courseCode}), Class: ${course.class}`
     };
   }
 
-
-  return (
-    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-      <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">Mark Attendance</h2>
-      </div>
-
-      <div className="space-y-4">
-        <div className="max-w-sm">
-          <Label htmlFor="course-select">Select Course</Label>
-          <Select onValueChange={setSelectedCourseId}>
-            <SelectTrigger id="course-select">
-              <SelectValue placeholder="Select a course..." />
-            </SelectTrigger>
-            <SelectContent>
-              {facultyCourses.map(course => (
-                <SelectItem key={course.id} value={course.id}>
-                  {course.name} - {course.class}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {selectedCourse && (
-          <Tabs defaultValue="theory">
-            <TabsList>
-              <TabsTrigger value="theory">Theory</TabsTrigger>
-              <TabsTrigger value="practical">Practical</TabsTrigger>
-            </TabsList>
-            <TabsContent value="theory">
-              <AttendanceContent 
-                course={selectedCourse} 
-                students={classStudents}
-                attendance={currentAttendance}
-                onAttendanceChange={handleAttendanceChange}
-                onSelectAll={handleSelectAll}
-                onSubmit={handleSubmit}
-                smartReviewInput={getSmartReviewInput()}
-              />
-            </TabsContent>
-            <TabsContent value="practical">
-              <AttendanceContent 
-                course={selectedCourse} 
-                students={classStudents}
-                attendance={currentAttendance}
-                onAttendanceChange={handleAttendanceChange}
-                onSelectAll={handleSelectAll}
-                onSubmit={handleSubmit}
-                smartReviewInput={getSmartReviewInput()}
-              />
-            </TabsContent>
-          </Tabs>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function AttendanceContent({ course, students, attendance, onAttendanceChange, onSelectAll, onSubmit, smartReviewInput }: any) {
-  const currentDate = new Date();
   
   return (
     <Card>
@@ -154,14 +158,14 @@ function AttendanceContent({ course, students, attendance, onAttendanceChange, o
       </CardHeader>
       <CardContent>
         <AttendanceSheet
-          students={students}
-          attendance={attendance}
-          onAttendanceChange={onAttendanceChange}
-          onSelectAll={onSelectAll}
+          students={classStudents}
+          attendance={currentAttendance}
+          onAttendanceChange={handleAttendanceChange}
+          onSelectAll={handleSelectAll}
         />
         <div className="flex justify-end gap-2 mt-4">
-            {smartReviewInput && smartReviewInput.currentAttendance.length > 0 && <SmartReviewDialog input={smartReviewInput} />}
-            <Button onClick={onSubmit}>Submit Attendance</Button>
+            {currentAttendance.size > 0 && <SmartReviewDialog input={getSmartReviewInput()} />}
+            <Button onClick={handleSubmit} disabled={currentAttendance.size === 0}>Submit Attendance</Button>
         </div>
       </CardContent>
     </Card>
@@ -172,6 +176,10 @@ function AttendancePageSkeleton() {
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
       <Skeleton className="h-9 w-64" />
+      <div className="flex gap-2">
+        <Skeleton className="h-10 w-24" />
+        <Skeleton className="h-10 w-24" />
+      </div>
       <div className="space-y-4">
         <div className="max-w-sm space-y-2">
           <Skeleton className="h-4 w-24" />
