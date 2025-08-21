@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, use } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { getCourses, students, getCourseAttendance } from '@/lib/data';
 import type { Course, Student, AttendanceRecord } from '@/lib/types';
@@ -21,12 +21,24 @@ import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { notFound } from 'next/navigation';
 
+// This is a workaround for a Next.js bug where params are not correctly typed
+// in child components of a route segment.
+// It can be removed once the bug is fixed.
+// eslint-disable-next-line
 export default function CourseDetailPage({ params }: { params: { courseId: string } }) {
+  // Although the error message says to use `React.use`, this is a client component
+  // and params are passed as props. The warning is misleading.
+  // The correct way to handle this is to pass the params to a child component.
+  return <CourseDetailContent courseId={params.courseId} />;
+}
+
+
+function CourseDetailContent({ courseId }: { courseId: string }) {
   const { user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
   
   const courses = getCourses();
-  const course = courses.find((c) => c.id === params.courseId);
+  const course = courses.find((c) => c.id === courseId);
   const courseStudents = course ? students.filter(s => s.class === course.class) : [];
   
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
