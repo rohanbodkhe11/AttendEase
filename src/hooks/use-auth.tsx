@@ -18,15 +18,18 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [users, setUsers] = useState<User[]>([...mockUsers]);
+  const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     try {
-      // Try to load users from session storage to persist them across reloads in dev
+      // Initialize users from sessionStorage or fallback to mockUsers
       const storedUsers = sessionStorage.getItem('users');
       if (storedUsers) {
         setUsers(JSON.parse(storedUsers));
+      } else {
+        setUsers(mockUsers);
+        sessionStorage.setItem('users', JSON.stringify(mockUsers));
       }
 
       const storedUser = localStorage.getItem('user');
@@ -79,7 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider value={{ user, isLoading, login, logout, register }}>
-      {children}
+      {!isLoading && children}
     </AuthContext.Provider>
   );
 }
@@ -124,3 +127,4 @@ export const AuthWrappedLayout = ({
 }>) => {
     return <AuthProvider><OriginalRootLayout>{children}</OriginalRootLayout></AuthProvider>
 }
+
