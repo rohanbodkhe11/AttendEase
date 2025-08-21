@@ -61,7 +61,8 @@ export const courses: Course[] = [
     facultyName: 'Dr. Evelyn Reed',
     class: 'SY CSE A',
     totalLectures: 40,
-    description: 'An introductory course to fundamental data structures and algorithms. Topics include arrays, linked lists, stacks, queues, trees, and graphs.'
+    description: 'An introductory course to fundamental data structures and algorithms. Topics include arrays, linked lists, stacks, queues, trees, and graphs.',
+    type: 'Theory',
   },
   {
     id: 'course2',
@@ -71,7 +72,8 @@ export const courses: Course[] = [
     facultyName: 'Dr. Evelyn Reed',
     class: 'SY CSE A',
     totalLectures: 35,
-    description: 'Learn to build modern web applications. Covers HTML, CSS, JavaScript, and server-side technologies for dynamic web content.'
+    description: 'Learn to build modern web applications. Covers HTML, CSS, JavaScript, and server-side technologies for dynamic web content.',
+    type: 'Theory',
   },
   {
     id: 'course3',
@@ -81,7 +83,8 @@ export const courses: Course[] = [
     facultyName: 'Dr. Evelyn Reed',
     class: 'SY CSE A',
     totalLectures: 38,
-    description: 'This course covers the design and implementation of database systems. Topics include SQL, relational models, and database design.'
+    description: 'This course covers the design and implementation of database systems. Topics include SQL, relational models, and database design.',
+    type: 'Practical',
   },
    {
     id: 'course4',
@@ -91,7 +94,8 @@ export const courses: Course[] = [
     facultyName: 'Dr. Evelyn Reed',
     class: 'SY CSE A',
     totalLectures: 42,
-    description: 'Explore the principles of operating systems, including process management, memory management, and file systems.'
+    description: 'Explore the principles of operating systems, including process management, memory management, and file systems.',
+    type: 'Practical',
   },
 ];
 

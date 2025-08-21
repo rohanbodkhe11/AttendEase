@@ -27,6 +27,7 @@ export interface Course {
   class: string;
   totalLectures: number;
   description: string;
+  type: 'Theory' | 'Practical';
 }
 
 export interface AttendanceRecord {
