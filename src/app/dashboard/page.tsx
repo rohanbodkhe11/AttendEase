@@ -1,16 +1,17 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { courses, getStudentAttendance, users } from "@/lib/data";
-import type { Course, AttendanceRecord } from "@/lib/types";
+import type { Course, AttendanceRecord, User } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { BookOpen, User, Users } from "lucide-react";
+import { BookOpen, User as UserIcon, Users } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function DashboardPage() {
@@ -30,7 +31,7 @@ export default function DashboardPage() {
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
         <h2 className="text-3xl font-bold tracking-tight">Welcome back, {user.name}!</h2>
-        {user.role === 'faculty' ? <FacultyDashboard /> : <StudentDashboard />}
+        {user.role === 'faculty' ? <FacultyDashboard user={user} /> : <StudentDashboard user={user} />}
     </div>
   );
 }
@@ -52,8 +53,8 @@ function DashboardSkeleton() {
     );
 }
 
-function FacultyDashboard() {
-  const facultyCourses = courses.filter(c => c.facultyId === 'faculty1');
+function FacultyDashboard({ user }: { user: User }) {
+  const facultyCourses = courses.filter(c => c.facultyId === user.id);
   const totalStudents = users.filter(u => u.role === 'student').length;
 
   return (
@@ -82,7 +83,7 @@ function FacultyDashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Upcoming Lecture</CardTitle>
-            <User className="h-4 w-4 text-muted-foreground" />
+            <UserIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">Data Structures</div>
@@ -124,12 +125,14 @@ function FacultyDashboard() {
   );
 }
 
-function StudentDashboard() {
+function StudentDashboard({ user }: { user: User }) {
   const [attendance, setAttendance] = useState<{ course: Course; records: AttendanceRecord[] }[]>([]);
 
   useEffect(() => {
-    setAttendance(getStudentAttendance('student1'));
-  }, []);
+    if (user) {
+        setAttendance(getStudentAttendance(user.id));
+    }
+  }, [user]);
 
   const calculateAttendancePercentage = (records: AttendanceRecord[]) => {
     if (records.length === 0) return 0;
@@ -165,7 +168,7 @@ function StudentDashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Last Absent</CardTitle>
-            <User className="h-4 w-4 text-muted-foreground" />
+            <UserIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">Web Technology</div>
