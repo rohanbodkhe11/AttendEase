@@ -204,7 +204,7 @@ function StudentDashboard({ user }: { user: User }) {
           <CardHeader>
             <CardTitle>Subject-wise Attendance</CardTitle>
             <CardDescription>Your attendance status in each course.</CardDescription>
-          </Header>
+          </CardHeader>
           <CardContent>
             <div className="space-y-6">
               {attendance.map(({ course, records }) => {
