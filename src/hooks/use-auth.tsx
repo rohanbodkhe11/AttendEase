@@ -3,7 +3,7 @@
 
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { getUsers, saveUsers, mockUsers } from '@/lib/data';
+import { getUsers, saveUsers } from '@/lib/data';
 import type { User, Role } from '@/lib/types';
 
 interface AuthContextType {
@@ -40,7 +40,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = (email: string, password: string, role: Role): boolean => {
-    const foundUser = users.find(
+    // Make sure we are checking against the most up-to-date user list
+    const currentUsers = getUsers(); 
+    const foundUser = currentUsers.find(
       (u) => u.email === email && u.password === password && u.role === role
     );
     if (foundUser) {
@@ -52,19 +54,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const register = (data: Omit<User, 'id' | 'avatarUrl' | 'attendance'>): boolean => {
-    const existingUser = users.find(u => u.email === data.email);
+    // Ensure we start with the definitive user list from storage
+    const currentUsers = getUsers();
+    const existingUser = currentUsers.find(u => u.email === data.email);
+
     if (existingUser) {
         return false;
     }
+
     const newUser: User = {
-        id: `user${users.length + 1}`,
+        id: `user${currentUsers.length + 1}`,
         ...data,
         avatarUrl: `https://placehold.co/100x100.png`
     };
     
-    const updatedUsers = [...users, newUser];
+    const updatedUsers = [...currentUsers, newUser];
     saveUsers(updatedUsers);
-    setUsers(updatedUsers); // This was the missing piece
+    setUsers(updatedUsers); // Update the state to reflect the new user
     
     return true;
   }
