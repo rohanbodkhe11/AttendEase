@@ -23,8 +23,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     try {
-      // Initialize users from sessionStorage
-      setUsers(getUsers());
+      const allUsers = getUsers();
+      setUsers(allUsers);
 
       const storedUser = localStorage.getItem('user');
       if (storedUser) {
@@ -40,7 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = (email: string, password: string, role: Role): boolean => {
-    const allUsers = getUsers();
+    const allUsers = getUsers(); // Always get the latest list
     const foundUser = allUsers.find(
       (u) => u.email === email && u.password === password && u.role === role
     );
@@ -53,7 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const register = (data: Omit<User, 'id' | 'avatarUrl' | 'attendance'>): boolean => {
-    const allUsers = getUsers();
+    const allUsers = getUsers(); // Start with the definitive list from storage
     const existingUser = allUsers.find(u => u.email === data.email);
     if (existingUser) {
         return false;
@@ -66,7 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     const updatedUsers = [...allUsers, newUser];
     saveUsers(updatedUsers);
-    setUsers(updatedUsers);
+    setUsers(updatedUsers); // Update the state right after saving
     
     return true;
   }
