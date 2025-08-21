@@ -40,8 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = (email: string, password: string, role: Role): boolean => {
-    const allUsers = getUsers(); // Always get the latest list
-    const foundUser = allUsers.find(
+    const foundUser = users.find(
       (u) => u.email === email && u.password === password && u.role === role
     );
     if (foundUser) {
@@ -53,20 +52,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const register = (data: Omit<User, 'id' | 'avatarUrl' | 'attendance'>): boolean => {
-    const allUsers = getUsers(); // Start with the definitive list from storage
-    const existingUser = allUsers.find(u => u.email === data.email);
+    const existingUser = users.find(u => u.email === data.email);
     if (existingUser) {
         return false;
     }
     const newUser: User = {
-        id: `user${allUsers.length + 1}`,
+        id: `user${users.length + 1}`,
         ...data,
         avatarUrl: `https://placehold.co/100x100.png`
     };
     
-    const updatedUsers = [...allUsers, newUser];
+    const updatedUsers = [...users, newUser];
     saveUsers(updatedUsers);
-    setUsers(updatedUsers); // Update the state right after saving
+    setUsers(updatedUsers); // This was the missing piece
     
     return true;
   }
