@@ -16,24 +16,27 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// This is a simple in-memory store for users that gets reset on page refresh.
-// In a real app, you would use a database.
-const users = [...mockUsers];
-
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [users, setUsers] = useState<User[]>([...mockUsers]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     try {
+      // Try to load users from session storage to persist them across reloads in dev
+      const storedUsers = sessionStorage.getItem('users');
+      if (storedUsers) {
+        setUsers(JSON.parse(storedUsers));
+      }
+
       const storedUser = localStorage.getItem('user');
       if (storedUser) {
         setUser(JSON.parse(storedUser));
       }
     } catch (error) {
-        console.error("Failed to parse user from localStorage", error)
+        console.error("Failed to parse from storage", error)
         localStorage.removeItem('user');
+        sessionStorage.removeItem('users');
     } finally {
       setIsLoading(false);
     }
@@ -61,9 +64,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         ...data,
         avatarUrl: `https://placehold.co/100x100.png`
     };
-    users.push(newUser); 
-    // In a real app, this would be an API call.
-    // We don't log them in automatically.
+    
+    const updatedUsers = [...users, newUser];
+    setUsers(updatedUsers);
+    sessionStorage.setItem('users', JSON.stringify(updatedUsers));
+    
     return true;
   }
 
