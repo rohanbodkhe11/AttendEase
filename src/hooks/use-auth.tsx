@@ -40,7 +40,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = (email: string, password: string, role: Role): boolean => {
-    // Make sure we are checking against the most up-to-date user list
     const currentUsers = getUsers(); 
     const foundUser = currentUsers.find(
       (u) => u.email === email && u.password === password && u.role === role
@@ -54,23 +53,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const register = (data: Omit<User, 'id' | 'avatarUrl' | 'attendance'>): boolean => {
-    // Ensure we start with the definitive user list from storage
-    const currentUsers = getUsers();
-    const existingUser = currentUsers.find(u => u.email === data.email);
+    // This now checks against the up-to-date state
+    const existingUser = users.find(u => u.email === data.email);
 
     if (existingUser) {
         return false;
     }
 
     const newUser: User = {
-        id: `user${currentUsers.length + 1}`,
+        id: `user${users.length + 1}`,
         ...data,
         avatarUrl: `https://placehold.co/100x100.png`
     };
     
-    const updatedUsers = [...currentUsers, newUser];
+    const updatedUsers = [...users, newUser];
+    // Update the state first
+    setUsers(updatedUsers);
+    // Then save the updated state to storage
     saveUsers(updatedUsers);
-    setUsers(updatedUsers); // Update the state to reflect the new user
     
     return true;
   }
