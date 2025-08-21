@@ -1,0 +1,38 @@
+export type Role = 'student' | 'faculty';
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  password?: string;
+  role: Role;
+  department?: string;
+  class?: string;
+  avatarUrl?: string;
+}
+
+export interface Student {
+  id: string;
+  rollNumber: string;
+  name: string;
+  class: string;
+}
+
+export interface Course {
+  id: string;
+  name: string;
+  courseCode: string;
+  facultyId: string;
+  facultyName: string;
+  class: string;
+  totalLectures: number;
+  description: string;
+}
+
+export interface AttendanceRecord {
+  id: string;
+  courseId: string;
+  studentId: string;
+  date: string;
+  isPresent: boolean;
+}

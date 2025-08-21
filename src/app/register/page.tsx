@@ -12,12 +12,10 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -37,43 +35,49 @@ import { useAuth } from "@/hooks/use-auth";
 import { Logo } from "@/components/app/logo";
 import { useToast } from "@/hooks/use-toast";
 
-const loginSchema = z.object({
+const registerSchema = z.object({
+  name: z.string().min(2, { message: "Name must be at least 2 characters." }),
   email: z.string().email({ message: "Invalid email address." }),
   password: z.string().min(6, { message: "Password must be at least 6 characters." }),
   role: z.enum(["student", "faculty"], { required_error: "You must select a role." }),
+  department: z.string().optional(),
+  class: z.string().optional(),
 });
 
-type LoginFormValues = z.infer<typeof loginSchema>;
+type RegisterFormValues = z.infer<typeof registerSchema>;
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const router = useRouter();
-  const { login } = useAuth();
+  const { register } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
-  const form = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
+  const form = useForm<RegisterFormValues>({
+    resolver: zodResolver(registerSchema),
     defaultValues: {
+      name: "",
       email: "",
       password: "",
     },
   });
 
-  const onSubmit = (data: LoginFormValues) => {
+  const role = form.watch("role");
+
+  const onSubmit = (data: RegisterFormValues) => {
     setIsLoading(true);
     try {
-      const success = login(data.email, data.password, data.role);
+      const success = register(data);
       if (success) {
         toast({
-          title: "Login Successful",
-          description: "Redirecting to your dashboard...",
+          title: "Registration Successful",
+          description: "You can now log in with your new account.",
         });
-        router.push("/dashboard");
+        router.push("/");
       } else {
         toast({
           variant: "destructive",
-          title: "Login Failed",
-          description: "Invalid email or password for the selected role.",
+          title: "Registration Failed",
+          description: "An account with this email may already exist.",
         });
       }
     } catch (error) {
@@ -83,7 +87,7 @@ export default function LoginPage() {
           description: "Something went wrong. Please try again.",
         });
     } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -94,12 +98,25 @@ export default function LoginPage() {
           <div className="mx-auto">
             <Logo />
           </div>
-          <CardTitle className="text-2xl font-bold">Welcome Back!</CardTitle>
-          <CardDescription>Enter your credentials to access your account</CardDescription>
+          <CardTitle className="text-2xl font-bold">Create an Account</CardTitle>
+          <CardDescription>Join AttendEase today!</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Full Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="John Doe" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="email"
@@ -147,17 +164,63 @@ export default function LoginPage() {
                   </FormItem>
                 )}
               />
+
+              {role === 'student' && (
+                <>
+                  <FormField
+                    control={form.control}
+                    name="department"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Department</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g., Computer Science" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="class"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Class</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g., SY CSE A" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </>
+              )}
+
+              {role === 'faculty' && (
+                <FormField
+                  control={form.control}
+                  name="department"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Department</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., Computer Science" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Signing In..." : "Sign In"}
+                {isLoading ? "Creating Account..." : "Create Account"}
               </Button>
             </form>
           </Form>
-        </CardContent>
-        <CardFooter className="flex flex-col space-y-2">
-            <p className="text-sm text-muted-foreground">
-                Don't have an account? <Link href="/register" className="font-medium text-primary hover:underline">Register</Link>
+           <p className="mt-4 text-center text-sm text-muted-foreground">
+                Already have an account? <Link href="/" className="font-medium text-primary hover:underline">Sign In</Link>
             </p>
-        </CardFooter>
+        </CardContent>
       </Card>
     </div>
   );
