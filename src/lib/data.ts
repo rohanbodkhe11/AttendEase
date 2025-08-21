@@ -1,6 +1,7 @@
+
 import type { User, Course, Student, AttendanceRecord } from './types';
 
-export const users: User[] = [
+export const mockUsers: User[] = [
   {
     id: 'student1',
     name: 'Alice Johnson',
@@ -97,6 +98,7 @@ export const courses: Course[] = [
 export const pastAttendance: AttendanceRecord[] = [];
 
 const generateAttendance = () => {
+  if (pastAttendance.length > 0) return; // Don't generate if already populated
   const dates: string[] = [];
   for(let i=10; i>0; i--) {
     dates.push(new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
@@ -135,4 +137,28 @@ export const getStudentAttendance = (studentId: string): { course: Course; recor
 
 export const getCourseAttendance = (courseId: string): AttendanceRecord[] => {
   return pastAttendance.filter(att => att.courseId === courseId);
+};
+
+// User data management with sessionStorage
+export const getUsers = (): User[] => {
+  try {
+    const storedUsers = sessionStorage.getItem('users');
+    if (storedUsers) {
+      return JSON.parse(storedUsers);
+    } else {
+      sessionStorage.setItem('users', JSON.stringify(mockUsers));
+      return mockUsers;
+    }
+  } catch (error) {
+    console.error("Failed to access sessionStorage for users", error);
+    return mockUsers;
+  }
+};
+
+export const saveUsers = (users: User[]) => {
+  try {
+    sessionStorage.setItem('users', JSON.stringify(users));
+  } catch (error) {
+    console.error("Failed to save users to sessionStorage", error);
+  }
 };

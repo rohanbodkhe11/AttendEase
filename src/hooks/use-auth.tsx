@@ -3,7 +3,7 @@
 
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { users as mockUsers } from '@/lib/data';
+import { getUsers, saveUsers, mockUsers } from '@/lib/data';
 import type { User, Role } from '@/lib/types';
 
 interface AuthContextType {
@@ -23,14 +23,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     try {
-      // Initialize users from sessionStorage or fallback to mockUsers
-      const storedUsers = sessionStorage.getItem('users');
-      if (storedUsers) {
-        setUsers(JSON.parse(storedUsers));
-      } else {
-        setUsers(mockUsers);
-        sessionStorage.setItem('users', JSON.stringify(mockUsers));
-      }
+      // Initialize users from sessionStorage
+      setUsers(getUsers());
 
       const storedUser = localStorage.getItem('user');
       if (storedUser) {
@@ -46,7 +40,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = (email: string, password: string, role: Role): boolean => {
-    const foundUser = users.find(
+    const allUsers = getUsers();
+    const foundUser = allUsers.find(
       (u) => u.email === email && u.password === password && u.role === role
     );
     if (foundUser) {
@@ -58,19 +53,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const register = (data: Omit<User, 'id' | 'avatarUrl' | 'attendance'>): boolean => {
-    const existingUser = users.find(u => u.email === data.email);
+    const allUsers = getUsers();
+    const existingUser = allUsers.find(u => u.email === data.email);
     if (existingUser) {
         return false;
     }
     const newUser: User = {
-        id: `user${users.length + 1}`,
+        id: `user${allUsers.length + 1}`,
         ...data,
         avatarUrl: `https://placehold.co/100x100.png`
     };
     
-    const updatedUsers = [...users, newUser];
+    const updatedUsers = [...allUsers, newUser];
+    saveUsers(updatedUsers);
     setUsers(updatedUsers);
-    sessionStorage.setItem('users', JSON.stringify(updatedUsers));
     
     return true;
   }
@@ -127,4 +123,3 @@ export const AuthWrappedLayout = ({
 }>) => {
     return <AuthProvider><OriginalRootLayout>{children}</OriginalRootLayout></AuthProvider>
 }
-
