@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { getCourses, getStudentAttendance, users, students } from "@/lib/data";
@@ -11,8 +12,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { BookOpen, User as UserIcon, Users } from "lucide-react";
+import { BookOpen, User as UserIcon, Users, PlusCircle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 
 export default function DashboardPage() {
   const { user, isLoading } = useAuth();
@@ -95,9 +97,17 @@ function FacultyDashboard({ user }: { user: User }) {
       </div>
       <div>
         <Card>
-            <CardHeader>
-                <CardTitle>Your Courses</CardTitle>
-                <CardDescription>An overview of the courses you are teaching.</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                    <CardTitle>Your Courses</CardTitle>
+                    <CardDescription>An overview of the courses you are teaching.</CardDescription>
+                </div>
+                 <Button asChild>
+                    <Link href="/courses/new">
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Create Course
+                    </Link>
+                </Button>
             </CardHeader>
             <CardContent>
                 <Table>
