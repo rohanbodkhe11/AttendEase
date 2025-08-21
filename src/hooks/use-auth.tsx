@@ -18,7 +18,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // This is a simple in-memory store for users that gets reset on page refresh.
 // In a real app, you would use a database.
-let users = [...mockUsers];
+const users = [...mockUsers];
 
 
 export function AuthProvider({ children }: { children: ReactNode }) {
