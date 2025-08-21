@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -176,7 +177,7 @@ export default function RegisterPage() {
                       <FormItem>
                         <FormLabel>Department</FormLabel>
                         <FormControl>
-                          <Input placeholder="e.g., Computer Science" {...field} />
+                          <Input placeholder="e.g., Computer Science" {...field} value={field.value ?? ""} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -189,7 +190,7 @@ export default function RegisterPage() {
                       <FormItem>
                         <FormLabel>Class</FormLabel>
                         <FormControl>
-                          <Input placeholder="e.g., SY CSE A" {...field} />
+                          <Input placeholder="e.g., SY CSE A" {...field} value={field.value ?? ""} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -206,7 +207,7 @@ export default function RegisterPage() {
                     <FormItem>
                       <FormLabel>Department</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g., Computer Science" {...field} />
+                        <Input placeholder="e.g., Computer Science" {...field} value={field.value ?? ""} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

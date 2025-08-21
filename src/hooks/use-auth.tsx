@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
@@ -14,6 +15,11 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// This is a simple in-memory store for users that gets reset on page refresh.
+// In a real app, you would use a database.
+let users = [...mockUsers];
+
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -34,7 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = (email: string, password: string, role: Role): boolean => {
-    const foundUser = mockUsers.find(
+    const foundUser = users.find(
       (u) => u.email === email && u.password === password && u.role === role
     );
     if (foundUser) {
@@ -46,16 +52,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const register = (data: Omit<User, 'id' | 'avatarUrl' | 'attendance'>): boolean => {
-    const existingUser = mockUsers.find(u => u.email === data.email);
+    const existingUser = users.find(u => u.email === data.email);
     if (existingUser) {
         return false;
     }
     const newUser: User = {
-        id: `user${mockUsers.length + 1}`,
+        id: `user${users.length + 1}`,
         ...data,
         avatarUrl: `https://placehold.co/100x100.png`
     };
-    mockUsers.push(newUser); 
+    users.push(newUser); 
     // In a real app, this would be an API call.
     // We don't log them in automatically.
     return true;
