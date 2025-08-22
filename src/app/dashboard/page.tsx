@@ -62,7 +62,7 @@ function FacultyDashboard({ user }: { user: User }) {
   const facultyCourses = courses.filter(c => c.facultyId === user.id);
   const theoryCourses = facultyCourses.filter(c => c.type === 'Theory');
   const practicalCourses = facultyCourses.filter(c => c.type === 'Practical');
-  const facultyClasses = [...new Set(facultyCourses.flatMap(c => c.classes))];
+  const facultyClasses = [...new Set(facultyCourses.flatMap(c => c.classes || []))];
   const totalStudents = getStudents().filter(s => facultyClasses.includes(s.class)).length;
 
   return (
@@ -154,7 +154,7 @@ function CourseGrid({ courses }: { courses: Course[] }) {
             </CardHeader>
             <CardContent className="flex-grow">
                <div className="flex flex-wrap gap-1 mb-2">
-                  {course.classes.map(c => <Badge key={c} variant="secondary">{c}</Badge>)}
+                  {course.classes && course.classes.map(c => <Badge key={c} variant="secondary">{c}</Badge>)}
               </div>
               <p className="text-sm text-muted-foreground line-clamp-3">
                 {course.description}
@@ -274,3 +274,5 @@ function StudentDashboard({ user }: { user: User }) {
     </>
   );
 }
+
+    
