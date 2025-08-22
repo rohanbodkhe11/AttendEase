@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
-import { getCourses, getStudentAttendance, users, students } from "@/lib/data";
+import { getCourses, getStudentAttendance, getUsers, getStudents } from "@/lib/data";
 import type { Course, AttendanceRecord, User } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -63,7 +63,7 @@ function FacultyDashboard({ user }: { user: User }) {
   const theoryCourses = facultyCourses.filter(c => c.type === 'Theory');
   const practicalCourses = facultyCourses.filter(c => c.type === 'Practical');
   const facultyClasses = [...new Set(facultyCourses.map(c => c.class))];
-  const totalStudents = students.filter(s => facultyClasses.includes(s.class)).length;
+  const totalStudents = getStudents().filter(s => facultyClasses.includes(s.class)).length;
 
   return (
     <>
@@ -271,3 +271,5 @@ function StudentDashboard({ user }: { user: User }) {
     </>
   );
 }
+
+    
