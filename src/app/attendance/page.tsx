@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
-import { getCourses, getStudentsForCourse, saveStudentsForCourse } from '@/lib/data';
+import { getCourses, getStudentsForCourse, saveStudentsForCourse, getAttendance } from '@/lib/data';
 import type { Student, AttendanceRecord as AttendanceRecordType, Course } from '@/lib/types';
 import {
   Select,
@@ -23,7 +23,7 @@ import { SmartReviewDialog } from '@/components/app/smart-review-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
-import { PlusCircle, UserPlus } from 'lucide-react';
+import { UserPlus } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 
 
@@ -112,12 +112,29 @@ function AttendanceCourseSelector({ courses }: { courses: Course[] }) {
     )
 }
 
+const theoryTimeSlots = [
+    '10:15 - 11:15',
+    '11:15 - 12:15',
+    '1:15 - 2:15',
+    '2:15 - 3:15',
+    '3:30 - 4:30',
+    '4:30 - 5:30'
+];
+
+const practicalTimeSlots = [
+    '10:15 - 12:15',
+    '1:15 - 3:15',
+    '3:30 - 5:30'
+];
+
 
 function AttendanceContent({ course, onStudentsUpdate }: { course: Course, onStudentsUpdate: (courseId: string, students: Student[]) => void }) {
   const [currentAttendance, setCurrentAttendance] = useState<Map<string, boolean>>(new Map());
   const { toast } = useToast();
   const [pastAttendance, setPastAttendance] = useState<AttendanceRecordType[]>([]);
-  const [lectureDateTime, setLectureDateTime] = useState('');
+  const [lectureDate, setLectureDate] = useState('');
+  const [lectureTimeSlot, setLectureTimeSlot] = useState('');
+
 
   const [courseStudents, setCourseStudents] = useState<Student[]>([]);
   
@@ -125,11 +142,10 @@ function AttendanceContent({ course, onStudentsUpdate }: { course: Course, onStu
     setPastAttendance(getAttendance());
     setCourseStudents(getStudentsForCourse(course.id));
     
-    // Set default lecture time to now
+    // Set default lecture date to today
     const now = new Date();
-    now.setSeconds(0);
-    now.setMilliseconds(0);
-    setLectureDateTime(now.toISOString().slice(0, 16));
+    setLectureDate(now.toISOString().split('T')[0]);
+    setLectureTimeSlot('');
 
   }, [course]);
 
@@ -147,11 +163,11 @@ function AttendanceContent({ course, onStudentsUpdate }: { course: Course, onStu
   };
   
   const handleSubmit = () => {
-     if(!lectureDateTime) {
+     if(!lectureDate || !lectureTimeSlot) {
       toast({
         variant: 'destructive',
         title: 'Validation Error',
-        description: 'Please select a date and time for the lecture.',
+        description: 'Please select a date and time slot for the lecture.',
       });
       return;
     }
@@ -164,11 +180,10 @@ function AttendanceContent({ course, onStudentsUpdate }: { course: Course, onStu
   };
 
   const getSmartReviewInput = () => {
-    if (!course || !lectureDateTime) return null;
-    const lectureDateStr = new Date(lectureDateTime).toISOString().split('T')[0];
+    if (!course || !lectureDate) return null;
     const currentAttendanceForReview: AttendanceRecordType[] = Array.from(currentAttendance.entries()).map(([studentId, isPresent]) => ({
         studentId,
-        date: lectureDateStr,
+        date: lectureDate,
         isPresent,
         courseId: course.id,
         id: ''
@@ -188,6 +203,7 @@ function AttendanceContent({ course, onStudentsUpdate }: { course: Course, onStu
       onStudentsUpdate(course.id, updatedStudents);
   }
 
+  const timeSlots = course.type === 'Theory' ? theoryTimeSlots : practicalTimeSlots;
   
   return (
     <Card>
@@ -201,15 +217,31 @@ function AttendanceContent({ course, onStudentsUpdate }: { course: Course, onStu
             </div>
             <AddStudentsDialog course={course} onStudentsAdded={handleStudentsAdded} />
         </div>
-        <div className="mt-4">
-          <Label htmlFor="lecture-time">Lecture Date & Time</Label>
-          <Input 
-            id="lecture-time"
-            type="datetime-local" 
-            className="max-w-xs"
-            value={lectureDateTime}
-            onChange={(e) => setLectureDateTime(e.target.value)}
-          />
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 max-w-lg">
+          <div>
+              <Label htmlFor="lecture-date">Lecture Date</Label>
+              <Input 
+                id="lecture-date"
+                type="date" 
+                value={lectureDate}
+                onChange={(e) => setLectureDate(e.target.value)}
+              />
+          </div>
+          <div>
+            <Label htmlFor="time-slot-select">Time Slot</Label>
+            <Select onValueChange={setLectureTimeSlot} value={lectureTimeSlot}>
+                <SelectTrigger id="time-slot-select">
+                <SelectValue placeholder="Select a time slot..." />
+                </SelectTrigger>
+                <SelectContent>
+                {timeSlots.map(slot => (
+                    <SelectItem key={slot} value={slot}>
+                    {slot}
+                    </SelectItem>
+                ))}
+                </SelectContent>
+            </Select>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
@@ -343,5 +375,3 @@ function AttendancePageSkeleton() {
     </div>
   )
 }
-
-    
