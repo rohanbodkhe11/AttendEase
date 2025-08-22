@@ -274,7 +274,3 @@ function StudentDashboard({ user }: { user: User }) {
     </>
   );
 }
-
-    
-
-    

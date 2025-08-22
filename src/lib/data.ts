@@ -165,7 +165,6 @@ function initializeData() {
   if (isInitialized) {
     return;
   }
-  isInitialized = true;
 
   const defaultCourse: Course = {
     id: 'course-1',
@@ -181,7 +180,7 @@ function initializeData() {
   courses = [defaultCourse];
 
   // Correctly get students for the default course
-  const allStudents = users.filter(u => u.role === 'student');
+  const allStudents = getUsers().filter(u => u.role === 'student');
   courseStudents[defaultCourse.id] = allStudents
     .filter(s => defaultCourse.classes.includes(s.class || ''))
     .map(u => ({
@@ -192,6 +191,7 @@ function initializeData() {
     }));
 
   saveDataToSession();
+  isInitialized = true;
 }
 
 // Initialize data as soon as this module is loaded

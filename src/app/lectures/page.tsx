@@ -39,7 +39,7 @@ export default function LecturesPage() {
   const facultyCourses = allCourses.filter(c => c.facultyId === user.id);
   const theoryCourses = facultyCourses.filter(c => c.type === 'Theory');
   const practicalCourses = facultyCourses.filter(c => c.type === 'Practical');
-  const classStudents = selectedCourse ? getStudents().filter(s => s.class === selectedCourse.class) : [];
+  const classStudents = selectedCourse ? getStudents().filter(s => (selectedCourse.classes || []).includes(s.class)) : [];
   
   const handleCourseSelect = (course: Course) => {
     setSelectedCourse(course);
@@ -106,7 +106,7 @@ export default function LecturesPage() {
           <CardHeader>
             <CardTitle>{selectedCourse.name} - Mark Attendance</CardTitle>
             <CardDescription>
-                Class: {selectedCourse.class} | Department: {facultyUser?.department}
+                Classes: {selectedCourse.classes.join(', ')} | Department: {facultyUser?.department}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -149,7 +149,7 @@ function CourseList({ courses, onCourseSelect, title }: { courses: Course[], onC
             <div>
               <h3 className="font-bold">{course.name}</h3>
               <p className="text-sm text-muted-foreground">{course.courseCode}</p>
-              <p className="text-sm text-muted-foreground">Class: {course.class}</p>
+              <p className="text-sm text-muted-foreground">Classes: {course.classes.join(', ')}</p>
             </div>
             <Button className="mt-4 w-full" onClick={() => onCourseSelect(course)}>
               Mark Attendance
