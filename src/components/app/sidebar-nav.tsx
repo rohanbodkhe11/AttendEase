@@ -29,6 +29,7 @@ const facultyNavItems = [
 
 const studentNavItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+  { href: "/reports", icon: FileText, label: "Reports" },
   { href: "/courses", icon: BookUser, label: "Courses" },
 ];
 
