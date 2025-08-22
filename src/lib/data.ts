@@ -52,52 +52,7 @@ export const students: Student[] = [
   { id: 'student6', rollNumber: 'S06', name: 'Fiona Garcia', class: 'SY CSE A' },
 ];
 
-let courses: Course[] = [
-  {
-    id: 'course1',
-    name: 'Data Structures',
-    courseCode: 'CS201',
-    facultyId: 'faculty1',
-    facultyName: 'Dr. Evelyn Reed',
-    class: 'SY CSE A',
-    totalLectures: 40,
-    description: 'An introductory course to fundamental data structures and algorithms. Topics include arrays, linked lists, stacks, queues, trees, and graphs.',
-    type: 'Theory',
-  },
-  {
-    id: 'course2',
-    name: 'Web Technology',
-    courseCode: 'CS202',
-    facultyId: 'faculty1',
-    facultyName: 'Dr. Evelyn Reed',
-    class: 'SY CSE A',
-    totalLectures: 35,
-    description: 'Learn to build modern web applications. Covers HTML, CSS, JavaScript, and server-side technologies for dynamic web content.',
-    type: 'Theory',
-  },
-  {
-    id: 'course3',
-    name: 'Database Management',
-    courseCode: 'CS203',
-    facultyId: 'faculty1',
-    facultyName: 'Dr. Evelyn Reed',
-    class: 'SY CSE A',
-    totalLectures: 38,
-    description: 'This course covers the design and implementation of database systems. Topics include SQL, relational models, and database design.',
-    type: 'Practical',
-  },
-   {
-    id: 'course4',
-    name: 'Operating Systems',
-    courseCode: 'CS204',
-    facultyId: 'faculty1',
-    facultyName: 'Dr. Evelyn Reed',
-    class: 'SY CSE A',
-    totalLectures: 42,
-    description: 'Explore the principles of operating systems, including process management, memory management, and file systems.',
-    type: 'Practical',
-  },
-];
+let courses: Course[] = [];
 
 export const pastAttendance: AttendanceRecord[] = [];
 
