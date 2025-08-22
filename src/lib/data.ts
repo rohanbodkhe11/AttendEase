@@ -103,6 +103,9 @@ export const pastAttendance: AttendanceRecord[] = [];
 
 // Course data management with sessionStorage
 export const getCourses = (): Course[] => {
+  if (typeof window === 'undefined') {
+    return courses;
+  }
   try {
     const storedCourses = sessionStorage.getItem('courses');
     if (storedCourses) {
@@ -118,6 +121,10 @@ export const getCourses = (): Course[] => {
 };
 
 export const saveCourses = (newCourses: Course[]) => {
+  if (typeof window === 'undefined') {
+    courses = newCourses;
+    return;
+  }
   try {
     courses = newCourses;
     sessionStorage.setItem('courses', JSON.stringify(courses));
@@ -171,6 +178,9 @@ export const getCourseAttendance = (courseId: string): AttendanceRecord[] => {
 
 // User data management with sessionStorage
 export const getUsers = (): User[] => {
+  if (typeof window === 'undefined') {
+    return mockUsers;
+  }
   try {
     const storedUsers = sessionStorage.getItem('users');
     if (storedUsers) {
@@ -186,6 +196,9 @@ export const getUsers = (): User[] => {
 };
 
 export const saveUsers = (users: User[]) => {
+  if (typeof window === 'undefined') {
+    return;
+  }
   try {
     sessionStorage.setItem('users', JSON.stringify(users));
   } catch (error) {
