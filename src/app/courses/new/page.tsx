@@ -38,6 +38,7 @@ import {
 } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, PlusCircle, X } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const classSchema = z.object({
   year: z.string({ required_error: 'Please select a year.' }),
@@ -61,10 +62,10 @@ const departments = ['CSE', 'IT', 'ENTC', 'Mech', 'Civil', 'AI & DS'];
 const divisions = ['A', 'B', 'C', 'D'];
 
 export default function NewCoursePage() {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<CourseFormValues>({
     resolver: zodResolver(courseSchema),
@@ -75,6 +76,7 @@ export default function NewCoursePage() {
       totalLectures: 40,
       description: '',
     },
+    disabled: authLoading,
   });
 
   const { fields, append, remove } = useFieldArray({
@@ -82,17 +84,18 @@ export default function NewCoursePage() {
     name: "classes"
   });
   
-  const facultyUser = getUsers().find(u => u.id === user?.id);
-
   const onSubmit = (data: CourseFormValues) => {
-    setIsLoading(true);
+    setIsSubmitting(true);
+    
+    const facultyUser = getUsers().find(u => u.id === user?.id);
+
     if (!facultyUser) {
         toast({
             variant: 'destructive',
             title: 'Error',
-            description: 'Could not find faculty user information.',
+            description: 'Could not find faculty user information. Please try logging in again.',
         });
-        setIsLoading(false);
+        setIsSubmitting(false);
         return;
     }
 
@@ -125,10 +128,32 @@ export default function NewCoursePage() {
         description: 'Something went wrong. Please try again.',
       });
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
   
+  if (authLoading) {
+    return (
+        <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
+            <div className="flex items-center gap-4">
+                <Skeleton className="h-10 w-10" />
+                <Skeleton className="h-9 w-64" />
+            </div>
+            <Card>
+                <CardHeader>
+                    <Skeleton className="h-8 w-48" />
+                    <Skeleton className="h-5 w-64" />
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-24 w-full" />
+                    <Skeleton className="h-40 w-full" />
+                </CardContent>
+            </Card>
+        </div>
+    )
+  }
+
   if (user?.role !== 'faculty') {
     return (
         <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
@@ -323,8 +348,8 @@ export default function NewCoursePage() {
                 />
 
               <div className="flex justify-end">
-                <Button type="submit" disabled={isLoading}>
-                    {isLoading ? "Creating..." : "Create Course"}
+                <Button type="submit" disabled={isSubmitting || authLoading}>
+                    {isSubmitting ? "Creating..." : "Create Course"}
                 </Button>
               </div>
             </form>
