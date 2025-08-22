@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import Link from 'next/link';
@@ -37,14 +37,18 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, PlusCircle, X } from 'lucide-react';
+
+const classSchema = z.object({
+  year: z.string({ required_error: 'Please select a year.' }),
+  department: z.string({ required_error: 'Please select a department.' }),
+  division: z.string({ required_error: 'Please select a division.' }),
+});
 
 const courseSchema = z.object({
   name: z.string().min(3, { message: 'Course name must be at least 3 characters.' }),
   courseCode: z.string().min(3, { message: 'Course code must be at least 3 characters.' }),
-  year: z.string({ required_error: 'Please select a year.' }),
-  department: z.string({ required_error: 'Please select a department.' }),
-  division: z.string({ required_error: 'Please select a division.' }),
+  classes: z.array(classSchema).min(1, { message: 'You must add at least one class.' }),
   totalLectures: z.coerce.number().int().min(1, { message: 'Total lectures must be at least 1.' }),
   description: z.string().min(10, { message: 'Description must be at least 10 characters.' }),
   type: z.enum(['Theory', 'Practical'], { required_error: 'You must select a course type.' }),
@@ -54,7 +58,7 @@ type CourseFormValues = z.infer<typeof courseSchema>;
 
 const years = ['FE', 'SE', 'TE', 'BE'];
 const departments = ['CSE', 'IT', 'ENTC', 'Mech', 'Civil', 'AI & DS'];
-const divisions = ['A', 'B', 'C', 'D', 'E'];
+const divisions = ['A', 'B', 'C', 'D'];
 
 export default function NewCoursePage() {
   const { user } = useAuth();
@@ -67,9 +71,15 @@ export default function NewCoursePage() {
     defaultValues: {
       name: '',
       courseCode: '',
+      classes: [{ year: '', department: '', division: ''}],
       totalLectures: 40,
       description: '',
     },
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "classes"
   });
   
   const facultyUser = getUsers().find(u => u.id === user?.id);
@@ -94,7 +104,7 @@ export default function NewCoursePage() {
         facultyName: facultyUser.name,
         name: data.name,
         courseCode: data.courseCode,
-        class: `${data.year} ${data.department} ${data.division}`,
+        classes: data.classes.map(c => `${c.year} ${c.department} ${c.division}`),
         totalLectures: data.totalLectures,
         description: data.description,
         type: data.type,
@@ -173,69 +183,92 @@ export default function NewCoursePage() {
                         </FormItem>
                         )}
                     />
-                    <div className="md:col-span-2 grid md:grid-cols-3 gap-6">
-                         <FormField
-                            control={form.control}
-                            name="year"
-                            render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Year</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl>
-                                    <SelectTrigger>
-                                    <SelectValue placeholder="Select year" />
-                                    </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                    {years.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}
-                                </SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="department"
-                            render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Department</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl>
-                                    <SelectTrigger>
-                                    <SelectValue placeholder="Select department" />
-                                    </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                     {departments.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
-                                </SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem>
-                            )}
-                        />
-                         <FormField
-                            control={form.control}
-                            name="division"
-                            render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Division</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl>
-                                    <SelectTrigger>
-                                    <SelectValue placeholder="Select division" />
-                                    </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                    {divisions.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
-                                </SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem>
-                            )}
-                        />
-                    </div>
-                   
+                </div>
+                
+                <div className="space-y-4">
+                    <FormLabel>Classes</FormLabel>
+                    <FormDescription>Add one or more classes that this course will be taught to.</FormDescription>
+                     {fields.map((field, index) => (
+                        <div key={field.id} className="flex items-end gap-4 p-4 border rounded-lg">
+                             <FormField
+                                control={form.control}
+                                name={`classes.${index}.year`}
+                                render={({ field }) => (
+                                <FormItem className="flex-1">
+                                    <FormLabel>Year</FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl>
+                                        <SelectTrigger>
+                                        <SelectValue placeholder="Select year" />
+                                        </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        {years.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}
+                                    </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name={`classes.${index}.department`}
+                                render={({ field }) => (
+                                <FormItem className="flex-1">
+                                    <FormLabel>Department</FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl>
+                                        <SelectTrigger>
+                                        <SelectValue placeholder="Select department" />
+                                        </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        {departments.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+                                    </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name={`classes.${index}.division`}
+                                render={({ field }) => (
+                                <FormItem className="flex-1">
+                                    <FormLabel>Division</FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl>
+                                        <SelectTrigger>
+                                        <SelectValue placeholder="Select division" />
+                                        </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        {divisions.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+                                    </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
+                            <Button type="button" variant="destructive" size="icon" onClick={() => remove(index)} disabled={fields.length <= 1}>
+                                <X className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    ))}
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => append({ year: '', department: '', division: '' })}
+                    >
+                        <PlusCircle className="mr-2" />
+                        Add Class
+                    </Button>
+                    <FormMessage>{form.formState.errors.classes?.message}</FormMessage>
+                </div>
+
+
+                <div className="grid md:grid-cols-2 gap-6">
                     <FormField
                         control={form.control}
                         name="totalLectures"

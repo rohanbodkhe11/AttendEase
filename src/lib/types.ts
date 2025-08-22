@@ -1,3 +1,4 @@
+
 export type Role = 'student' | 'faculty';
 
 export interface User {
@@ -14,7 +15,7 @@ export interface User {
 export interface Student {
   id: string;
   rollNumber: string;
-  name: string;
+  name:string;
   class: string;
 }
 
@@ -24,7 +25,7 @@ export interface Course {
   courseCode: string;
   facultyId: string;
   facultyName: string;
-  class: string;
+  classes: string[];
   totalLectures: number;
   description: string;
   type: 'Theory' | 'Practical';
@@ -36,6 +37,7 @@ export interface AttendanceRecord {
   studentId: string;
   date: string;
   isPresent: boolean;
+  class: string;
 }
 
 export interface AttendanceReport {

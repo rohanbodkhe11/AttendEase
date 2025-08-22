@@ -62,7 +62,7 @@ function FacultyDashboard({ user }: { user: User }) {
   const facultyCourses = courses.filter(c => c.facultyId === user.id);
   const theoryCourses = facultyCourses.filter(c => c.type === 'Theory');
   const practicalCourses = facultyCourses.filter(c => c.type === 'Practical');
-  const facultyClasses = [...new Set(facultyCourses.map(c => c.class))];
+  const facultyClasses = [...new Set(facultyCourses.flatMap(c => c.classes))];
   const totalStudents = getStudents().filter(s => facultyClasses.includes(s.class)).length;
 
   return (
@@ -150,9 +150,12 @@ function CourseGrid({ courses }: { courses: Course[] }) {
               />
             <CardHeader>
               <CardTitle>{course.name}</CardTitle>
-              <CardDescription>{course.courseCode} - {course.class}</CardDescription>
+              <CardDescription>{course.courseCode}</CardDescription>
             </CardHeader>
             <CardContent className="flex-grow">
+               <div className="flex flex-wrap gap-1 mb-2">
+                  {course.classes.map(c => <Badge key={c} variant="secondary">{c}</Badge>)}
+              </div>
               <p className="text-sm text-muted-foreground line-clamp-3">
                 {course.description}
               </p>
@@ -188,7 +191,7 @@ function StudentDashboard({ user }: { user: User }) {
   
   const overallPercentage = calculateAttendancePercentage(attendance.flatMap(a => a.records));
 
-  const studentCourses = courses.filter(c => c.class === user.class);
+  const studentCourses = courses.filter(c => c.classes.includes(user.class || ''));
   
   const getLastAbsentRecord = () => {
     const allRecords = attendance.flatMap(a => a.records.map(r => ({...r, courseName: a.course.name})));
@@ -271,5 +274,3 @@ function StudentDashboard({ user }: { user: User }) {
     </>
   );
 }
-
-    

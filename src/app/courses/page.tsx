@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import Image from 'next/image';
 import { ArrowRight, PlusCircle } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import { Badge } from "@/components/ui/badge";
 
 export default function CoursesPage() {
   const { user } = useAuth();
@@ -45,9 +46,12 @@ export default function CoursesPage() {
               />
             <CardHeader>
               <CardTitle>{course.name}</CardTitle>
-              <CardDescription>{course.courseCode} - {course.class}</CardDescription>
+              <CardDescription>{course.courseCode}</CardDescription>
             </CardHeader>
             <CardContent className="flex-grow">
+              <div className="flex flex-wrap gap-1 mb-2">
+                  {course.classes.map(c => <Badge key={c} variant="secondary">{c}</Badge>)}
+              </div>
               <p className="text-sm text-muted-foreground line-clamp-3">
                 {course.description}
               </p>

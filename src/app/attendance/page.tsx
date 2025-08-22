@@ -5,7 +5,7 @@ import { useEffect, useState, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import * as XLSX from 'xlsx';
 import { useAuth } from '@/hooks/use-auth';
-import { getCourses, getStudentsForCourse, saveStudentsForCourse, getAttendance, saveAttendanceReport } from '@/lib/data';
+import { getCourses, getStudentsForCourse, saveStudentsForCourse, getAttendance, saveAttendanceReport, getStudentsByClass } from '@/lib/data';
 import type { Student, AttendanceRecord as AttendanceRecordType, Course } from '@/lib/types';
 import {
   Select,
@@ -73,27 +73,24 @@ function AttendanceCourseSelector({ courses }: { courses: Course[] }) {
     const [selectedClass, setSelectedClass] = useState<string | null>(null);
     const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
 
-    const facultyClasses = [...new Set(courses.map(c => c.class))];
+    const facultyClasses = [...new Set(courses.flatMap(c => c.classes))];
 
-    useEffect(() => {
-      // Reset course when class changes
-      setSelectedCourseId(null);
-    }, [selectedClass]);
+    const coursesForClass = courses.filter(c => c.classes.includes(selectedClass || ''));
 
-    const coursesForClass = courses.filter(c => c.class === selectedClass);
     const selectedCourse = coursesForClass.find(c => c.id === selectedCourseId);
     
     useEffect(() => {
-        if (courses.length > 0 && !courses.find(c => c.id === selectedCourseId)) {
+        if (selectedCourseId && !courses.find(c => c.id === selectedCourseId)?.classes.includes(selectedClass || '')) {
           setSelectedCourseId(null);
         }
-    }, [courses, selectedCourseId]);
+    }, [selectedClass, selectedCourseId, courses]);
 
     const handleCourseStudentsUpdate = (courseId: string, students: Student[]) => {
       // This is a bit of a hack to force a re-render of the child
       // In a real app, you'd use a more robust state management solution
+      const currentCourseId = selectedCourseId;
       setSelectedCourseId(null); 
-      setTimeout(() => setSelectedCourseId(courseId), 0);
+      setTimeout(() => setSelectedCourseId(currentCourseId), 0);
     }
 
     return (
@@ -131,8 +128,8 @@ function AttendanceCourseSelector({ courses }: { courses: Course[] }) {
               </div>
             </div>
 
-            {selectedCourse && (
-                <AttendanceContent course={selectedCourse} onStudentsUpdate={handleCourseStudentsUpdate} />
+            {selectedCourse && selectedClass && (
+                <AttendanceContent course={selectedCourse} selectedClass={selectedClass} onStudentsUpdate={handleCourseStudentsUpdate} />
             )}
         </div>
     )
@@ -154,7 +151,7 @@ const practicalTimeSlots = [
 ];
 
 
-function AttendanceContent({ course, onStudentsUpdate }: { course: Course, onStudentsUpdate: (courseId: string, students: Student[]) => void }) {
+function AttendanceContent({ course, selectedClass, onStudentsUpdate }: { course: Course, selectedClass: string, onStudentsUpdate: (courseId: string, students: Student[]) => void }) {
   const [currentAttendance, setCurrentAttendance] = useState<Map<string, boolean>>(new Map());
   const { toast } = useToast();
   const [pastAttendance, setPastAttendance] = useState<AttendanceRecordType[]>([]);
@@ -163,20 +160,18 @@ function AttendanceContent({ course, onStudentsUpdate }: { course: Course, onStu
   const router = useRouter();
 
 
-  const [courseStudents, setCourseStudents] = useState<Student[]>([]);
+  const [classStudents, setClassStudents] = useState<Student[]>([]);
   
   useEffect(() => {
     setPastAttendance(getAttendance());
-    setCourseStudents(getStudentsForCourse(course.id));
+    setClassStudents(getStudentsByClass(selectedClass));
     
-    // Set default lecture date to today
     const now = new Date();
     setLectureDate(now.toISOString().split('T')[0]);
     setLectureTimeSlot('');
     setCurrentAttendance(new Map());
 
-
-  }, [course]);
+  }, [course, selectedClass]);
 
 
   const handleAttendanceChange = (studentId: string, isPresent: boolean) => {
@@ -185,7 +180,7 @@ function AttendanceContent({ course, onStudentsUpdate }: { course: Course, onStu
 
   const handleSelectAll = (isPresent: boolean) => {
     const newAttendance = new Map<string, boolean>();
-    courseStudents.forEach(student => {
+    classStudents.forEach(student => {
       newAttendance.set(student.id, isPresent);
     });
     setCurrentAttendance(newAttendance);
@@ -201,7 +196,7 @@ function AttendanceContent({ course, onStudentsUpdate }: { course: Course, onStu
       return;
     }
 
-    const attendanceArray = courseStudents.map(student => ({
+    const attendanceArray = classStudents.map(student => ({
         studentId: student.id,
         studentName: student.name,
         rollNumber: student.rollNumber,
@@ -213,7 +208,7 @@ function AttendanceContent({ course, onStudentsUpdate }: { course: Course, onStu
         courseId: course.id,
         courseName: course.name,
         courseCode: course.courseCode,
-        class: course.class,
+        class: selectedClass,
         date: lectureDate,
         timeSlot: lectureTimeSlot,
         attendance: attendanceArray,
@@ -235,23 +230,17 @@ function AttendanceContent({ course, onStudentsUpdate }: { course: Course, onStu
         date: lectureDate,
         isPresent,
         courseId: course.id,
-        id: ''
+        id: '',
+        class: selectedClass
     }));
 
     return {
         currentAttendance: currentAttendanceForReview,
         pastAttendance: pastAttendance.filter(pa => pa.courseId === course.id),
-        classInfo: `Course: ${course.name} (${course.courseCode}), Class: ${course.class}`
+        classInfo: `Course: ${course.name} (${course.courseCode}), Class: ${selectedClass}`
     };
   }
-
-  const handleStudentsAdded = (newStudents: Student[]) => {
-      const updatedStudents = [...courseStudents, ...newStudents];
-      setCourseStudents(updatedStudents);
-      saveStudentsForCourse(course.id, updatedStudents);
-      onStudentsUpdate(course.id, updatedStudents);
-  }
-
+  
   const timeSlots = course.type === 'Theory' ? theoryTimeSlots : practicalTimeSlots;
   
   return (
@@ -261,10 +250,10 @@ function AttendanceContent({ course, onStudentsUpdate }: { course: Course, onStu
             <div>
               <CardTitle>{course.name}</CardTitle>
               <CardDescription>
-                  Class: {course.class} | Course Code: {course.courseCode}
+                  Class: {selectedClass} | Course Code: {course.courseCode}
               </CardDescription>
             </div>
-            <AddStudentsDialog course={course} onStudentsAdded={handleStudentsAdded} />
+            {/* <AddStudentsDialog course={course} onStudentsAdded={handleStudentsAdded} /> */}
         </div>
         <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 max-w-lg">
           <div>
@@ -294,156 +283,27 @@ function AttendanceContent({ course, onStudentsUpdate }: { course: Course, onStu
         </div>
       </CardHeader>
       <CardContent>
-        {courseStudents.length > 0 ? (
+        {classStudents.length > 0 ? (
           <AttendanceSheet
-            students={courseStudents}
+            students={classStudents}
             attendance={currentAttendance}
             onAttendanceChange={handleAttendanceChange}
             onSelectAll={handleSelectAll}
           />
         ) : (
           <div className="text-center py-8 text-muted-foreground">
-            <p>No students have been added to this course yet.</p>
-            <p className="text-sm">Click the "Add Students" button to get started.</p>
+            <p>No students found for class {selectedClass}.</p>
+            <p className="text-sm">You can add students via the main student management area.</p>
           </div>
         )}
         <div className="flex justify-end gap-2 mt-4">
             {currentAttendance.size > 0 && <SmartReviewDialog input={getSmartReviewInput()} />}
-            <Button onClick={handleSubmit} disabled={courseStudents.length === 0}>Submit Attendance</Button>
+            <Button onClick={handleSubmit} disabled={classStudents.length === 0}>Submit Attendance</Button>
         </div>
       </CardContent>
     </Card>
   );
 }
-
-function AddStudentsDialog({ course, onStudentsAdded }: { course: Course, onStudentsAdded: (students: Student[]) => void }) {
-    const [isOpen, setIsOpen] = useState(false);
-    const [selectedFile, setSelectedFile] = useState<File | null>(null);
-    const { toast } = useToast();
-
-    const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files) {
-            setSelectedFile(e.target.files[0]);
-        }
-    };
-
-    const handleAdd = () => {
-        if (!selectedFile) {
-            toast({
-                variant: 'destructive',
-                title: 'No file selected',
-                description: 'Please select an Excel file to upload.'
-            });
-            return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            try {
-                const data = new Uint8Array(e.target?.result as ArrayBuffer);
-                const workbook = XLSX.read(data, { type: 'array' });
-                const sheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[sheetName];
-                const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-
-                const newStudents: Student[] = [];
-                const existingStudents = getStudentsForCourse(course.id);
-                
-                // Start from row 1 to skip header
-                for (let i = 1; i < jsonData.length; i++) {
-                    const row = jsonData[i] as any[];
-                    if (!row || row.length < 2) continue;
-
-                    const rollNumber = String(row[0]).trim();
-                    const name = String(row[1]).trim();
-
-                    if (!rollNumber || !name) continue;
-
-                    if (existingStudents.some(s => s.rollNumber === rollNumber)) {
-                        toast({
-                            variant: 'destructive',
-                            title: 'Student Already Exists',
-                            description: `Student with roll number ${rollNumber} is already in this course. Skipping.`
-                        });
-                        continue; // Skip existing student
-                    }
-
-                    newStudents.push({
-                        id: `student-${course.id}-${rollNumber}`,
-                        rollNumber,
-                        name,
-                        class: course.class
-                    });
-                }
-                
-                if (newStudents.length > 0) {
-                    onStudentsAdded(newStudents);
-                    toast({
-                        title: 'Students Added',
-                        description: `${newStudents.length} new student(s) have been added to the course.`
-                    });
-                } else {
-                     toast({
-                        title: 'No New Students Added',
-                        description: `All students from the file were already in the course or the file was empty.`
-                    });
-                }
-
-                setSelectedFile(null);
-                setIsOpen(false);
-            } catch (error) {
-                console.error("Error parsing Excel file:", error);
-                toast({
-                    variant: 'destructive',
-                    title: 'Error Parsing File',
-                    description: 'Could not parse the Excel file. Please ensure it is in the correct format (RollNumber, Name) and not corrupted.'
-                });
-            }
-        };
-
-        reader.onerror = () => {
-             toast({
-                variant: 'destructive',
-                title: 'Error Reading File',
-                description: 'There was an error reading the selected file.'
-            });
-        }
-        
-        reader.readAsArrayBuffer(selectedFile);
-    };
-
-    return (
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogTrigger asChild>
-                <Button variant="outline"><UserPlus className="mr-2" /> Add Students</Button>
-            </DialogTrigger>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Add Students to {course.name}</DialogTitle>
-                    <DialogDescription>
-                        Upload an Excel file (.xlsx, .xls) with student data.
-                        Format: Column A should be Roll Number, Column B should be Name. The first row is assumed to be a header and will be skipped.
-                    </DialogDescription>
-                </DialogHeader>
-                <div className="py-4">
-                    <Label htmlFor="student-file" className="sr-only">Student Excel File</Label>
-                    <Input 
-                        id="student-file"
-                        type="file"
-                        accept=".xlsx, .xls"
-                        onChange={handleFileChange}
-                    />
-                    {selectedFile && <p className="text-sm text-muted-foreground mt-2">Selected: {selectedFile.name}</p>}
-                </div>
-                <DialogFooter>
-                    <Button variant="ghost" onClick={() => { setIsOpen(false); setSelectedFile(null); }}>Cancel</Button>
-                    <Button onClick={handleAdd} disabled={!selectedFile}><FileUp className="mr-2" /> Add from File</Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-    )
-}
-
 
 function AttendancePageSkeleton() {
   return (
@@ -468,5 +328,3 @@ function AttendancePageSkeleton() {
     </div>
   )
 }
-
-    

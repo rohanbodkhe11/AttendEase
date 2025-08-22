@@ -2,39 +2,37 @@
 "use client";
 
 import { useEffect, useState } from 'react';
+import { useForm, useFieldArray } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { useAuth } from '@/hooks/use-auth';
-import { getStudentsForCourse, getCourseAttendance } from '@/lib/data';
+import { getStudentsForCourse, getCourseAttendance, getCourses, saveCourses } from '@/lib/data';
 import type { Course, Student, AttendanceRecord } from '@/lib/types';
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { PlusCircle, X } from 'lucide-react';
 
-export default function CourseDetailContent({ course }: { course: Course }) {
+
+export default function CourseDetailContent({ initialCourse }: { initialCourse: Course }) {
   const { user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
   
-  const courseStudents = getStudentsForCourse(course.id);
-  
+  const [course, setCourse] = useState(initialCourse);
+  const [students, setStudents] = useState<Student[]>([]);
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
 
   useEffect(() => {
-    if(course) {
-      setAttendanceRecords(getCourseAttendance(course.id));
-    }
+    setStudents(getStudentsForCourse(course.id));
+    setAttendanceRecords(getCourseAttendance(course.id));
   }, [course]);
-
-
+  
   const handleAttendanceChange = (recordId: string, newStatus: 'true' | 'false') => {
     setAttendanceRecords(prevRecords =>
       prevRecords.map(rec =>
@@ -56,6 +54,10 @@ export default function CourseDetailContent({ course }: { course: Course }) {
     const dates = attendanceRecords.map(r => r.date);
     return [...new Set(dates)].sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
   }
+  
+  const handleClassesUpdated = (updatedCourse: Course) => {
+    setCourse(updatedCourse);
+  }
 
   if (authLoading || !user) {
     return <CourseDetailPageSkeleton />;
@@ -64,13 +66,19 @@ export default function CourseDetailContent({ course }: { course: Course }) {
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
       <Card>
-        <CardHeader>
-          <CardTitle className="text-3xl">{course.name}</CardTitle>
-          <CardDescription>
-            {course.courseCode} | Taught by {course.facultyName} | Class: {course.class}
-          </CardDescription>
+        <CardHeader className="flex flex-row justify-between items-start">
+            <div>
+              <CardTitle className="text-3xl">{course.name}</CardTitle>
+              <CardDescription>
+                {course.courseCode} | Taught by {course.facultyName}
+              </CardDescription>
+            </div>
+            {user.role === 'faculty' && <ManageClassesDialog course={course} onClassesUpdated={handleClassesUpdated} />}
         </CardHeader>
         <CardContent>
+          <div className="flex flex-wrap gap-2 mb-4">
+              {course.classes.map(c => <Badge key={c}>{c}</Badge>)}
+          </div>
           <p className="text-muted-foreground">{course.description}</p>
         </CardContent>
       </Card>
@@ -86,7 +94,7 @@ export default function CourseDetailContent({ course }: { course: Course }) {
           {user.role === 'faculty' && <Button onClick={saveChanges}>Save Changes</Button>}
         </CardHeader>
         <CardContent>
-          {courseStudents.length > 0 ? (
+          {students.length > 0 ? (
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
@@ -98,7 +106,7 @@ export default function CourseDetailContent({ course }: { course: Course }) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {(user.role === 'faculty' ? courseStudents : courseStudents.filter(s => s.id === user.id)).map(student => (
+                {(user.role === 'faculty' ? students : students.filter(s => s.id === user.id)).map(student => (
                   <TableRow key={student.id}>
                     <TableCell className="font-medium">{student.name} ({student.rollNumber})</TableCell>
                     {getUniqueDates().map(date => {
@@ -129,6 +137,175 @@ export default function CourseDetailContent({ course }: { course: Course }) {
   );
 }
 
+const years = ['FE', 'SE', 'TE', 'BE'];
+const departments = ['CSE', 'IT', 'ENTC', 'Mech', 'Civil', 'AI & DS'];
+const divisions = ['A', 'B', 'C', 'D'];
+
+const classSchema = z.object({
+  year: z.string({ required_error: 'Please select a year.' }),
+  department: z.string({ required_error: 'Please select a department.' }),
+  division: z.string({ required_error: 'Please select a division.' }),
+});
+
+const manageClassesSchema = z.object({
+  classes: z.array(classSchema).min(1, { message: 'You must have at least one class.' }),
+});
+
+type ManageClassesFormValues = z.infer<typeof manageClassesSchema>;
+
+function ManageClassesDialog({ course, onClassesUpdated }: { course: Course, onClassesUpdated: (course: Course) => void }) {
+    const [isOpen, setIsOpen] = useState(false);
+    const { toast } = useToast();
+
+    const defaultValues = {
+        classes: course.classes.map(c => {
+            const parts = c.split(' ');
+            return { year: parts[0], department: parts[1], division: parts[2] }
+        })
+    };
+
+    const form = useForm<ManageClassesFormValues>({
+        resolver: zodResolver(manageClassesSchema),
+        defaultValues,
+    });
+    
+    const { fields, append, remove } = useFieldArray({
+        control: form.control,
+        name: "classes"
+    });
+
+    const onSubmit = (data: ManageClassesFormValues) => {
+        try {
+            const allCourses = getCourses();
+            const updatedClasses = data.classes.map(c => `${c.year} ${c.department} ${c.division}`);
+            const updatedCourse = { ...course, classes: updatedClasses };
+            
+            const newCourses = allCourses.map(c => c.id === course.id ? updatedCourse : c);
+            saveCourses(newCourses);
+            
+            onClassesUpdated(updatedCourse);
+            toast({
+                title: "Classes Updated",
+                description: "The list of classes for this course has been updated.",
+            });
+            setIsOpen(false);
+        } catch (error) {
+            toast({
+                variant: 'destructive',
+                title: 'An error occurred',
+                description: 'Something went wrong. Please try again.',
+            });
+        }
+    }
+    
+    // Reset form when dialog is opened/closed
+    useEffect(() => {
+        form.reset(defaultValues);
+    }, [isOpen, course]);
+
+    return (
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+                <Button variant="outline">Manage Classes</Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[625px]">
+                <DialogHeader>
+                    <DialogTitle>Manage Classes for {course.name}</DialogTitle>
+                    <DialogDescription>
+                        Add or remove classes that this course is taught to.
+                    </DialogDescription>
+                </DialogHeader>
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4">
+                        <div className="space-y-4">
+                            {fields.map((field, index) => (
+                                <div key={field.id} className="flex items-end gap-4 p-4 border rounded-lg">
+                                    <FormField
+                                        control={form.control}
+                                        name={`classes.${index}.year`}
+                                        render={({ field }) => (
+                                        <FormItem className="flex-1">
+                                            <FormLabel>Year</FormLabel>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                <SelectValue placeholder="Select year" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                {years.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}
+                                            </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control}
+                                        name={`classes.${index}.department`}
+                                        render={({ field }) => (
+                                        <FormItem className="flex-1">
+                                            <FormLabel>Department</FormLabel>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                <SelectValue placeholder="Select department" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                {departments.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+                                            </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control}
+                                        name={`classes.${index}.division`}
+                                        render={({ field }) => (
+                                        <FormItem className="flex-1">
+                                            <FormLabel>Division</FormLabel>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                <SelectValue placeholder="Select division" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                {divisions.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+                                            </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                        )}
+                                    />
+                                    <Button type="button" variant="destructive" size="icon" onClick={() => remove(index)} disabled={fields.length <= 1}>
+                                        <X className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            ))}
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => append({ year: '', department: '', division: '' })}
+                            >
+                                <PlusCircle className="mr-2" />
+                                Add Class
+                            </Button>
+                             <FormMessage>{form.formState.errors.classes?.message}</FormMessage>
+                        </div>
+                        <DialogFooter>
+                            <Button variant="ghost" onClick={() => setIsOpen(false)}>Cancel</Button>
+                            <Button type="submit">Save Changes</Button>
+                        </DialogFooter>
+                    </form>
+                </Form>
+            </DialogContent>
+        </Dialog>
+    )
+}
 
 function FacultyAttendanceCell({ record, onAttendanceChange } : { record: AttendanceRecord | undefined, onAttendanceChange: (recordId: string, status: 'true' | 'false') => void}) {
     if (!record) return <Badge variant="outline">N/A</Badge>;
@@ -180,5 +357,3 @@ function CourseDetailPageSkeleton() {
          </div>
     )
 }
-
-    

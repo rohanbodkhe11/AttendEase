@@ -1,3 +1,4 @@
+
 import { getCourses } from '@/lib/data';
 import { notFound } from 'next/navigation';
 import CourseDetailContent from './course-detail-content';
@@ -18,5 +19,5 @@ export default async function CourseDetailPage({
   }
 
   // Pass the validated course to the client component.
-  return <CourseDetailContent course={course} />;
+  return <CourseDetailContent initialCourse={course} />;
 }

@@ -10,7 +10,7 @@ let users: User[] = [
     password: 'password123',
     role: 'student',
     department: 'Computer Science',
-    class: 'SY CSE A',
+    class: 'SE CSE A',
     avatarUrl: 'https://placehold.co/100x100.png',
   },
   {
@@ -20,7 +20,7 @@ let users: User[] = [
     password: 'password123',
     role: 'student',
     department: 'Computer Science',
-    class: 'SY CSE A',
+    class: 'SE CSE A',
     avatarUrl: 'https://placehold.co/100x100.png',
   },
    {
@@ -30,7 +30,7 @@ let users: User[] = [
     password: 'password123',
     role: 'student',
     department: 'Computer Science',
-    class: 'SY CSE A',
+    class: 'SE CSE B',
     avatarUrl: 'https://placehold.co/100x100.png',
   },
   {
@@ -50,10 +50,6 @@ let attendanceReports: AttendanceReport[] = [];
 
 
 // --- Data Persistence Simulation ---
-// In a real app, these would interact with a database.
-// For this prototype, we'll use session storage to persist data across reloads on the client.
-// We use a check for `typeof window` to ensure this code doesn't break server-side rendering.
-
 function initializeData() {
   if (typeof window !== 'undefined') {
     const storedUsers = sessionStorage.getItem('users');
@@ -70,11 +66,39 @@ function initializeData() {
 
     const storedAttendanceReports = sessionStorage.getItem('attendanceReports');
     if (storedAttendanceReports) attendanceReports = JSON.parse(storedAttendanceReports);
+    
+    // If there is no stored data, initialize with some defaults for demo purposes
+    if (!storedCourses || JSON.parse(storedCourses).length === 0) {
+      const defaultCourse: Course = {
+        id: 'course-1',
+        name: 'Data Structures',
+        courseCode: 'CS301',
+        facultyId: 'faculty1',
+        facultyName: 'Dr. Evelyn Reed',
+        classes: ['SE CSE A', 'SE CSE B'],
+        totalLectures: 40,
+        description: 'An introductory course on fundamental data structures.',
+        type: 'Theory',
+      };
+      courses = [defaultCourse];
+      
+      courseStudents[defaultCourse.id] = getUsers().filter(u => u.role === 'student').map(u => ({
+          id: u.id,
+          rollNumber: `S${u.id.replace('student','')}`,
+          name: u.name,
+          class: u.class || 'N/A'
+      }));
+      
+      saveDataToSession();
+    }
   }
 }
 
-// Initialize data as soon as this module is loaded
-initializeData();
+// Initialize data as soon as this module is loaded in the browser
+if (typeof window !== 'undefined') {
+    initializeData();
+}
+
 
 function saveDataToSession() {
   if (typeof window !== 'undefined') {
@@ -96,6 +120,15 @@ export const saveStudentsForCourse = (courseId: string, students: Student[]) => 
     saveDataToSession();
 }
 
+
+export const getStudentsByClass = (className: string): Student[] => {
+  return users.filter(u => u.role === 'student' && u.class === className).map(u => ({
+    id: u.id,
+    name: u.name,
+    rollNumber: `S${u.id.replace('student', '')}`, // Generate a sample roll number
+    class: u.class || 'N/A'
+  }));
+}
 
 export const getStudents = (): Student[] => {
   return users.filter(u => u.role === 'student').map(u => ({
@@ -156,7 +189,8 @@ export const saveAttendanceReport = (report: AttendanceReport) => {
         courseId: report.courseId,
         studentId: att.studentId,
         date: report.date,
-        isPresent: att.isPresent
+        isPresent: att.isPresent,
+        class: report.class,
     }));
     attendance.push(...newAttendanceRecords);
     saveDataToSession();
@@ -165,11 +199,11 @@ export const saveAttendanceReport = (report: AttendanceReport) => {
 
 // --- Helper Functions for Data Querying ---
 export const getStudentAttendance = (studentId: string): { course: Course; records: AttendanceRecord[] }[] => {
+  const student = users.find(u => u.id === studentId);
+  if (!student) return [];
+  
   return courses
-    .filter(course => {
-        const studentInCourse = getStudentsForCourse(course.id).some(s => s.id === studentId);
-        return studentInCourse;
-    })
+    .filter(course => course.classes.includes(student.class || ''))
     .map(course => ({
         course,
         records: attendance.filter(att => att.studentId === studentId && att.courseId === course.id),
