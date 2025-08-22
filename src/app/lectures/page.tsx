@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
-import { getCourses, students, users } from '@/lib/data';
+import { getCourses, students, getUsers } from '@/lib/data';
 import type { Course, Student } from '@/lib/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -35,7 +35,7 @@ export default function LecturesPage() {
     return <LecturesPageSkeleton />;
   }
 
-  const facultyUser = users.find(u => u.id === user.id);
+  const facultyUser = getUsers().find(u => u.id === user.id);
   const facultyCourses = allCourses.filter(c => c.facultyId === user.id);
   const theoryCourses = facultyCourses.filter(c => c.type === 'Theory');
   const practicalCourses = facultyCourses.filter(c => c.type === 'Practical');

@@ -64,8 +64,9 @@ export const getCourses = (): Course[] => {
     if (storedCourses) {
       return JSON.parse(storedCourses);
     }
+    sessionStorage.setItem('courses', JSON.stringify([]));
   }
-  return courses;
+  return [];
 };
 
 export const saveCourses = (newCourses: Course[]) => {
@@ -79,7 +80,7 @@ export const saveCourses = (newCourses: Course[]) => {
 
 const generateAttendance = (currentCourses: Course[]) => {
   let newAttendance: AttendanceRecord[] = [];
-  if (currentCourses.length === 0) {
+    if (currentCourses.length === 0) {
       saveAttendance([]); // Clear attendance if no courses
       return;
   };
@@ -112,8 +113,9 @@ export const getAttendance = (): AttendanceRecord[] => {
         if (storedAttendance) {
             return JSON.parse(storedAttendance);
         }
+         sessionStorage.setItem('attendance', JSON.stringify([]));
     }
-    return pastAttendance;
+    return [];
 }
 
 export const saveAttendance = (newAttendance: AttendanceRecord[]) => {

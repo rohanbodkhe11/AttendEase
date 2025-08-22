@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
-import { courses, students, pastAttendance } from '@/lib/data';
+import { getCourses, students, getAttendance } from '@/lib/data';
 import type { Student, AttendanceRecord as AttendanceRecordType, Course } from '@/lib/types';
 import {
   Select,
@@ -25,14 +25,16 @@ import { Skeleton } from '@/components/ui/skeleton';
 export default function AttendancePage() {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
+  const [allCourses, setAllCourses] = useState<Course[]>([]);
 
   useEffect(() => {
     if (!authLoading && (!user || user.role !== 'faculty')) {
       router.push('/dashboard');
     }
+    setAllCourses(getCourses());
   }, [user, authLoading, router]);
 
-  const facultyCourses = courses.filter(c => c.facultyId === user?.id);
+  const facultyCourses = allCourses.filter(c => c.facultyId === user?.id);
   const theoryCourses = facultyCourses.filter(c => c.type === 'Theory');
   const practicalCourses = facultyCourses.filter(c => c.type === 'Practical');
 
@@ -69,8 +71,10 @@ function AttendanceCourseSelector({ courses }: { courses: Course[] }) {
     
     useEffect(() => {
         // Reset selected course if the course list changes
-        setSelectedCourseId(null);
-    }, [courses]);
+        if (courses.length > 0 && !courses.find(c => c.id === selectedCourseId)) {
+          setSelectedCourseId(null);
+        }
+    }, [courses, selectedCourseId]);
 
     return (
          <div className="space-y-4">
@@ -101,6 +105,12 @@ function AttendanceCourseSelector({ courses }: { courses: Course[] }) {
 function AttendanceContent({ course }: { course: Course }) {
   const [currentAttendance, setCurrentAttendance] = useState<Map<string, boolean>>(new Map());
   const { toast } = useToast();
+  const [pastAttendance, setPastAttendance] = useState<AttendanceRecordType[]>([]);
+  
+  useEffect(() => {
+    setPastAttendance(getAttendance());
+  }, []);
+
 
   const classStudents = course ? students.filter(s => s.class === course.class) : [];
   const currentDate = new Date();
