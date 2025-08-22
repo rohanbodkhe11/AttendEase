@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect } from 'react';
@@ -34,8 +35,13 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         <Sidebar>
             <SidebarNav user={user} />
         </Sidebar>
-        <SidebarInset className="bg-gray-50 dark:bg-gray-900/50">
-          {children}
+        <SidebarInset className="bg-gray-50 dark:bg-gray-900/50 flex flex-col">
+          <main className="flex-1">
+            {children}
+          </main>
+          <footer className="p-4 text-center text-sm text-muted-foreground">
+            © 2024 AttendEase. All rights reserved by Rohan.
+          </footer>
         </SidebarInset>
       </div>
     </SidebarProvider>
