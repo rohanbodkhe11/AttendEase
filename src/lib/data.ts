@@ -67,6 +67,34 @@ export const saveStudentsForCourse = (courseId: string, students: Student[]) => 
     saveDataToSession();
 }
 
+export const addStudentsToClass = (className: string, newStudents: { name: string, rollNumber: string }[]) => {
+    const existingStudents = getUsers().filter(u => u.role === 'student');
+    const newUsers: User[] = [];
+
+    newStudents.forEach(student => {
+        // A simple check to avoid adding students with the same roll number in the same class
+        const studentExists = existingStudents.some(u => u.class === className && u.id.endsWith(student.rollNumber)); // A bit of a hack for demo
+        if (!studentExists) {
+            const newUser: User = {
+                id: `student-${Date.now()}-${student.rollNumber}`,
+                name: student.name,
+                email: `${student.name.toLowerCase().replace(' ','.')}@example.com`,
+                password: 'password123',
+                role: 'student',
+                class: className,
+                department: 'Imported',
+                avatarUrl: 'https://placehold.co/100x100.png',
+            };
+            newUsers.push(newUser);
+        }
+    });
+
+    if (newUsers.length > 0) {
+        users = [...users, ...newUsers];
+        saveDataToSession();
+    }
+}
+
 
 export const getStudentsByClass = (className: string): Student[] => {
   return users.filter(u => u.role === 'student' && u.class === className).map(u => ({
@@ -196,3 +224,5 @@ function initializeData() {
 
 // Initialize data as soon as this module is loaded
 initializeData();
+
+    

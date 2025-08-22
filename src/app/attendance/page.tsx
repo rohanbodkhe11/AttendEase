@@ -4,7 +4,7 @@
 import { useEffect, useState, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
-import { getCourses, getStudentsForCourse, saveStudentsForCourse, getAttendance, saveAttendanceReport, getStudentsByClass, saveCourses } from '@/lib/data';
+import { getCourses, getStudentsForCourse, saveStudentsForCourse, getAttendance, saveAttendanceReport, getStudentsByClass, saveCourses, addStudentsToClass } from '@/lib/data';
 import type { Student, AttendanceRecord as AttendanceRecordType, Course } from '@/lib/types';
 import {
   Select,
@@ -318,8 +318,8 @@ function ImportStudentsDialog({ course, selectedClass, onStudentsImported }: { c
     };
 
     const handleImport = () => {
-        if (!file) {
-            toast({ variant: 'destructive', title: 'No file selected', description: 'Please select an Excel file to import.' });
+        if (!file || !selectedClass) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Please select a file and ensure a class is selected.' });
             return;
         }
 
@@ -334,26 +334,25 @@ function ImportStudentsDialog({ course, selectedClass, onStudentsImported }: { c
                 const json = XLSX.utils.sheet_to_json<{ rollNumber: string, name: string }>(worksheet);
 
                 if (json.length > 0 && 'rollNumber' in json[0] && 'name' in json[0]) {
-                    const allCourses = getCourses();
-                    const courseToUpdate = allCourses.find(c => c.id === course.id);
-                    if (courseToUpdate) {
-                       // This is a placeholder for proper student management.
-                       // In a real app, you would have a separate student database and link students to courses.
-                       // For this prototype, we'll just log the imported students.
-                        console.log("Imported Students for course " + course.name + ":", json);
+                    const newStudents = json.map(item => ({
+                        rollNumber: String(item.rollNumber),
+                        name: item.name,
+                    }));
+                    
+                    addStudentsToClass(selectedClass, newStudents);
 
-                        toast({
-                            title: 'Import Successful',
-                            description: `${json.length} students have been prepared for import. In a real app, they would be saved now.`,
-                        });
-                        onStudentsImported();
-                        setIsOpen(false);
-                        setFile(null);
-                    }
+                    toast({
+                        title: 'Import Successful',
+                        description: `${json.length} students have been added to the class ${selectedClass}.`,
+                    });
+                    onStudentsImported();
+                    setIsOpen(false);
+                    setFile(null);
                 } else {
                     toast({ variant: 'destructive', title: 'Invalid File Format', description: 'The Excel file must have "rollNumber" and "name" columns.' });
                 }
             } catch (error) {
+                console.error("Import error:", error);
                 toast({ variant: 'destructive', title: 'Error Reading File', description: 'There was a problem processing the Excel file.' });
             } finally {
                 setIsImporting(false);
@@ -372,7 +371,7 @@ function ImportStudentsDialog({ course, selectedClass, onStudentsImported }: { c
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Import Students for {course.name}</DialogTitle>
+                    <DialogTitle>Import Students for {selectedClass}</DialogTitle>
                     <DialogDescription>
                         Upload an Excel (.xlsx) file with student information. Ensure the file has columns named "rollNumber" and "name".
                     </DialogDescription>
@@ -415,3 +414,5 @@ function AttendancePageSkeleton() {
     </div>
   )
 }
+
+    
