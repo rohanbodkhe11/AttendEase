@@ -1,7 +1,8 @@
 
 import type { User, Course, Student, AttendanceRecord } from './types';
 
-export const mockUsers: User[] = [
+// Initial seed data, which can be used if sessionStorage is not available or empty.
+const initialUsers: User[] = [
   {
     id: 'student1',
     name: 'Alice Johnson',
@@ -53,38 +54,35 @@ export const students: Student[] = [
 ];
 
 let courses: Course[] = [];
-
 let pastAttendance: AttendanceRecord[] = [];
+let users: User[] = [...initialUsers];
 
-// Course data management with sessionStorage
+// Course data management
 export const getCourses = (): Course[] => {
-  try {
+  if (typeof window !== 'undefined') {
     const storedCourses = sessionStorage.getItem('courses');
     if (storedCourses) {
       return JSON.parse(storedCourses);
-    } else {
-      sessionStorage.setItem('courses', JSON.stringify(courses));
-      return courses;
     }
-  } catch (error) {
-    // If sessionStorage is not available (e.g., in SSR), return the initial in-memory data
-    return courses;
   }
+  return courses;
 };
 
 export const saveCourses = (newCourses: Course[]) => {
-  try {
-    courses = newCourses; // Also update in-memory cache for SSR
+  courses = newCourses;
+  if (typeof window !== 'undefined') {
     sessionStorage.setItem('courses', JSON.stringify(courses));
-  } catch (error) {
-    console.error("Failed to save courses to sessionStorage", error);
+    // When courses change, re-generate attendance for them.
+    generateAttendance(newCourses);
   }
 };
 
-
-const generateAttendance = () => {
-  const currentCourses = getCourses();
-  if (pastAttendance.length > 0 || currentCourses.length === 0) return; // Don't generate if already populated or no courses
+const generateAttendance = (currentCourses: Course[]) => {
+  let newAttendance: AttendanceRecord[] = [];
+  if (currentCourses.length === 0) {
+      saveAttendance([]); // Clear attendance if no courses
+      return;
+  };
   
   const dates: string[] = [];
   for(let i=10; i>0; i--) {
@@ -94,14 +92,9 @@ const generateAttendance = () => {
   currentCourses.forEach(course => {
     students.filter(s => s.class === course.class).forEach(student => {
       dates.forEach(date => {
-        // Alice has good attendance, Bob has okay, Charlie is often absent
-        let isPresent = true;
-        if (student.id === 'student2') isPresent = Math.random() > 0.2; // 80% present
-        if (student.id === 'student3') isPresent = Math.random() > 0.6; // 40% present
-        if (student.id === 'student1' && date === dates[dates.length - 1]) isPresent = false; // Alice was absent yesterday. Anomaly!
-        
-        pastAttendance.push({
-          id: `att${pastAttendance.length + 1}`,
+        let isPresent = Math.random() > 0.15; // 85% chance of being present
+        newAttendance.push({
+          id: `att${newAttendance.length + 1}`,
           courseId: course.id,
           studentId: student.id,
           date: date,
@@ -110,42 +103,78 @@ const generateAttendance = () => {
       });
     });
   });
+  saveAttendance(newAttendance);
 };
 
-generateAttendance();
+export const getAttendance = (): AttendanceRecord[] => {
+    if (typeof window !== 'undefined') {
+        const storedAttendance = sessionStorage.getItem('attendance');
+        if (storedAttendance) {
+            return JSON.parse(storedAttendance);
+        }
+    }
+    return pastAttendance;
+}
+
+export const saveAttendance = (newAttendance: AttendanceRecord[]) => {
+    pastAttendance = newAttendance;
+    if (typeof window !== 'undefined') {
+        sessionStorage.setItem('attendance', JSON.stringify(pastAttendance));
+    }
+}
+
 
 // Helper functions to query data
 export const getStudentAttendance = (studentId: string): { course: Course; records: AttendanceRecord[] }[] => {
-  return getCourses().map(course => ({
-    course,
-    records: pastAttendance.filter(att => att.studentId === studentId && att.courseId === course.id),
-  }));
+  const allCourses = getCourses();
+  const allAttendance = getAttendance();
+  return allCourses
+    .filter(course => {
+        const studentClass = getUsers().find(u => u.id === studentId)?.class;
+        return course.class === studentClass;
+    })
+    .map(course => ({
+        course,
+        records: allAttendance.filter(att => att.studentId === studentId && att.courseId === course.id),
+    }));
 };
 
 export const getCourseAttendance = (courseId: string): AttendanceRecord[] => {
-  return pastAttendance.filter(att => att.courseId === courseId);
+  const allAttendance = getAttendance();
+  return allAttendance.filter(att => att.courseId === courseId);
 };
 
 // User data management with sessionStorage
 export const getUsers = (): User[] => {
-  try {
+  if (typeof window !== 'undefined') {
     const storedUsers = sessionStorage.getItem('users');
     if (storedUsers) {
       return JSON.parse(storedUsers);
-    } else {
-      sessionStorage.setItem('users', JSON.stringify(mockUsers));
-      return mockUsers;
     }
-  } catch (error) {
-    // If sessionStorage is not available (e.g., in SSR), return the initial in-memory data
-    return mockUsers;
+    sessionStorage.setItem('users', JSON.stringify(users));
+  }
+  return users;
+};
+
+export const saveUsers = (newUsers: User[]) => {
+  users = newUsers;
+  if (typeof window !== 'undefined') {
+    sessionStorage.setItem('users', JSON.stringify(users));
   }
 };
 
-export const saveUsers = (users: User[]) => {
-  try {
-    sessionStorage.setItem('users', JSON.stringify(users));
-  } catch (error) {
-    console.error("Failed to save users to sessionStorage", error);
-  }
-};
+// Initialize data on load
+if (typeof window !== 'undefined') {
+    if (!sessionStorage.getItem('courses')) {
+        sessionStorage.setItem('courses', JSON.stringify([]));
+    }
+    if (!sessionStorage.getItem('attendance')) {
+        sessionStorage.setItem('attendance', JSON.stringify([]));
+    }
+    if (!sessionStorage.getItem('users')) {
+        sessionStorage.setItem('users', JSON.stringify(initialUsers));
+    }
+    courses = JSON.parse(sessionStorage.getItem('courses')!);
+    pastAttendance = JSON.parse(sessionStorage.getItem('attendance')!);
+    users = JSON.parse(sessionStorage.getItem('users')!);
+}
