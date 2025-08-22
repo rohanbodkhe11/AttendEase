@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -23,7 +23,9 @@ import { Badge } from '@/components/ui/badge';
 import { getAttendanceSuggestions } from '@/ai/flows/smart-review';
 import type { AttendanceReviewInput, AttendanceReviewOutput } from '@/ai/flows/smart-review';
 import { Sparkles, Loader2 } from 'lucide-react';
-import { students } from '@/lib/data';
+import { getStudents } from '@/lib/data';
+import type { Student } from '@/lib/types';
+
 
 interface SmartReviewDialogProps {
   input: AttendanceReviewInput | null;
@@ -33,6 +35,13 @@ export function SmartReviewDialog({ input }: SmartReviewDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [suggestions, setSuggestions] = useState<AttendanceReviewOutput | null>(null);
+  const [students, setStudents] = useState<Student[]>([]);
+
+  useEffect(() => {
+    if (isOpen) {
+        setStudents(getStudents());
+    }
+  }, [isOpen]);
 
   const handleReview = async () => {
     if (!input) return;
