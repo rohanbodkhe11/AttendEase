@@ -70,9 +70,18 @@ export default function AttendancePage() {
 }
 
 function AttendanceCourseSelector({ courses }: { courses: Course[] }) {
+    const [selectedClass, setSelectedClass] = useState<string | null>(null);
     const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
 
-    const selectedCourse = courses.find(c => c.id === selectedCourseId);
+    const facultyClasses = [...new Set(courses.map(c => c.class))];
+
+    useEffect(() => {
+      // Reset course when class changes
+      setSelectedCourseId(null);
+    }, [selectedClass]);
+
+    const coursesForClass = courses.filter(c => c.class === selectedClass);
+    const selectedCourse = coursesForClass.find(c => c.id === selectedCourseId);
     
     useEffect(() => {
         if (courses.length > 0 && !courses.find(c => c.id === selectedCourseId)) {
@@ -89,20 +98,37 @@ function AttendanceCourseSelector({ courses }: { courses: Course[] }) {
 
     return (
          <div className="space-y-4">
-            <div className="max-w-sm">
-            <Label htmlFor="course-select">Select Course</Label>
-            <Select onValueChange={setSelectedCourseId} value={selectedCourseId || ""}>
-                <SelectTrigger id="course-select">
-                <SelectValue placeholder="Select a course..." />
-                </SelectTrigger>
-                <SelectContent>
-                {courses.map(course => (
-                    <SelectItem key={course.id} value={course.id}>
-                    {course.name} - {course.class}
-                    </SelectItem>
-                ))}
-                </SelectContent>
-            </Select>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-xl">
+              <div>
+                <Label htmlFor="class-select">Select Class</Label>
+                <Select onValueChange={setSelectedClass} value={selectedClass || ""}>
+                  <SelectTrigger id="class-select">
+                    <SelectValue placeholder="Select a class..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {facultyClasses.map(c => (
+                      <SelectItem key={c} value={c}>
+                        {c}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="course-select">Select Course</Label>
+                <Select onValueChange={setSelectedCourseId} value={selectedCourseId || ""} disabled={!selectedClass}>
+                    <SelectTrigger id="course-select">
+                    <SelectValue placeholder="Select a course..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                    {coursesForClass.map(course => (
+                        <SelectItem key={course.id} value={course.id}>
+                        {course.name}
+                        </SelectItem>
+                    ))}
+                    </SelectContent>
+                </Select>
+              </div>
             </div>
 
             {selectedCourse && (
@@ -428,11 +454,19 @@ function AttendancePageSkeleton() {
         <Skeleton className="h-10 w-24" />
       </div>
       <div className="space-y-4">
-        <div className="max-w-sm space-y-2">
-          <Skeleton className="h-4 w-24" />
-          <Skeleton className="h-10 w-full" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-xl">
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-10 w-full" />
+          </div>
         </div>
       </div>
     </div>
   )
 }
+
+    
