@@ -191,7 +191,7 @@ function StudentDashboard({ user }: { user: User }) {
   
   const overallPercentage = calculateAttendancePercentage(attendance.flatMap(a => a.records));
 
-  const studentCourses = courses.filter(c => c.classes.includes(user.class || ''));
+  const studentCourses = courses.filter(c => Array.isArray(c.classes) && c.classes.includes(user.class || ''));
   
   const getLastAbsentRecord = () => {
     const allRecords = attendance.flatMap(a => a.records.map(r => ({...r, courseName: a.course.name})));
@@ -274,5 +274,7 @@ function StudentDashboard({ user }: { user: User }) {
     </>
   );
 }
+
+    
 
     
