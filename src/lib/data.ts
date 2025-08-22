@@ -45,6 +45,7 @@ let users: User[] = [
 ];
 let courses: Course[] = [];
 let attendance: AttendanceRecord[] = [];
+let courseStudents: Record<string, Student[]> = {};
 
 
 // --- Data Persistence Simulation ---
@@ -54,30 +55,37 @@ let attendance: AttendanceRecord[] = [];
 function initializeData() {
   if (typeof window !== 'undefined') {
     const storedUsers = sessionStorage.getItem('users');
-    if (storedUsers) {
-      users = JSON.parse(storedUsers);
-    } else {
-      sessionStorage.setItem('users', JSON.stringify(users));
-    }
+    users = storedUsers ? JSON.parse(storedUsers) : users;
+    sessionStorage.setItem('users', JSON.stringify(users));
 
     const storedCourses = sessionStorage.getItem('courses');
-    if (storedCourses) {
-      courses = JSON.parse(storedCourses);
-    } else {
-      sessionStorage.setItem('courses', JSON.stringify(courses));
-    }
+    courses = storedCourses ? JSON.parse(storedCourses) : [];
+    sessionStorage.setItem('courses', JSON.stringify(courses));
+    
+    const storedCourseStudents = sessionStorage.getItem('courseStudents');
+    courseStudents = storedCourseStudents ? JSON.parse(storedCourseStudents) : {};
+    sessionStorage.setItem('courseStudents', JSON.stringify(courseStudents));
 
     const storedAttendance = sessionStorage.getItem('attendance');
-    if (storedAttendance) {
-      attendance = JSON.parse(storedAttendance);
-    } else {
-        sessionStorage.setItem('attendance', JSON.stringify(attendance));
-    }
+    attendance = storedAttendance ? JSON.parse(storedAttendance) : [];
+    sessionStorage.setItem('attendance', JSON.stringify(attendance));
   }
 }
 
 // Initialize data as soon as this module is loaded
 initializeData();
+
+// --- Student Management for Courses ---
+export const getStudentsForCourse = (courseId: string): Student[] => {
+    return courseStudents[courseId] || [];
+}
+
+export const saveStudentsForCourse = (courseId: string, students: Student[]) => {
+    courseStudents[courseId] = students;
+    if (typeof window !== 'undefined') {
+        sessionStorage.setItem('courseStudents', JSON.stringify(courseStudents));
+    }
+}
 
 
 export const students: Student[] = [
@@ -112,14 +120,13 @@ export const saveCourses = (newCourses: Course[]) => {
   if (typeof window !== 'undefined') {
     sessionStorage.setItem('courses', JSON.stringify(courses));
   }
-  generateAttendance(newCourses);
 };
 
 
 // --- Attendance Management ---
 const generateAttendance = (currentCourses: Course[]) => {
-    if (currentCourses.length === 0) {
-      saveAttendance([]); // Clear attendance if no courses
+    if (currentCourses.length === 0 || Object.keys(courseStudents).length === 0) {
+      saveAttendance([]); // Clear attendance if no courses or students
       return;
     }
 
@@ -130,18 +137,21 @@ const generateAttendance = (currentCourses: Course[]) => {
     }
 
     currentCourses.forEach(course => {
-        students.filter(s => s.class === course.class).forEach(student => {
-            dates.forEach(date => {
-                let isPresent = Math.random() > 0.15; // 85% chance of being present
-                newAttendance.push({
-                    id: `att${newAttendance.length + 1}`,
-                    courseId: course.id,
-                    studentId: student.id,
-                    date: date,
-                    isPresent: isPresent,
+        const studentsForCourse = getStudentsForCourse(course.id);
+        if (studentsForCourse.length > 0) {
+            studentsForCourse.forEach(student => {
+                dates.forEach(date => {
+                    let isPresent = Math.random() > 0.15; // 85% chance of being present
+                    newAttendance.push({
+                        id: `att${newAttendance.length + 1}`,
+                        courseId: course.id,
+                        studentId: student.id,
+                        date: date,
+                        isPresent: isPresent,
+                    });
                 });
             });
-        });
+        }
     });
     saveAttendance(newAttendance);
 };
@@ -164,8 +174,8 @@ export const getStudentAttendance = (studentId: string): { course: Course; recor
   const allAttendance = getAttendance();
   return allCourses
     .filter(course => {
-        const student = getUsers().find(u => u.id === studentId);
-        return student && course.class === student.class;
+        const studentInCourse = getStudentsForCourse(course.id).some(s => s.id === studentId);
+        return studentInCourse;
     })
     .map(course => ({
         course,
@@ -177,3 +187,5 @@ export const getCourseAttendance = (courseId: string): AttendanceRecord[] => {
   const allAttendance = getAttendance();
   return allAttendance.filter(att => att.courseId === courseId);
 };
+
+    

@@ -1,8 +1,9 @@
+
 "use client";
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import { students, getCourseAttendance } from '@/lib/data';
+import { getStudentsForCourse, getCourseAttendance } from '@/lib/data';
 import type { Course, Student, AttendanceRecord } from '@/lib/types';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,7 +24,7 @@ export default function CourseDetailContent({ course }: { course: Course }) {
   const { user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
   
-  const courseStudents = students.filter(s => s.class === course.class);
+  const courseStudents = getStudentsForCourse(course.id);
   
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
 
@@ -85,6 +86,7 @@ export default function CourseDetailContent({ course }: { course: Course }) {
           {user.role === 'faculty' && <Button onClick={saveChanges}>Save Changes</Button>}
         </CardHeader>
         <CardContent>
+          {courseStudents.length > 0 ? (
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
@@ -116,6 +118,11 @@ export default function CourseDetailContent({ course }: { course: Course }) {
               </TableBody>
             </Table>
           </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              No students have been added to this course yet.
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
@@ -173,3 +180,5 @@ function CourseDetailPageSkeleton() {
          </div>
     )
 }
+
+    
