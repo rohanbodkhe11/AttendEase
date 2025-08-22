@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
-import { getCourses, students, getUsers } from '@/lib/data';
+import { getCourses, getStudents, getUsers } from '@/lib/data';
 import type { Course, Student } from '@/lib/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -39,7 +39,7 @@ export default function LecturesPage() {
   const facultyCourses = allCourses.filter(c => c.facultyId === user.id);
   const theoryCourses = facultyCourses.filter(c => c.type === 'Theory');
   const practicalCourses = facultyCourses.filter(c => c.type === 'Practical');
-  const classStudents = selectedCourse ? students.filter(s => s.class === selectedCourse.class) : [];
+  const classStudents = selectedCourse ? getStudents().filter(s => s.class === selectedCourse.class) : [];
   
   const handleCourseSelect = (course: Course) => {
     setSelectedCourse(course);
