@@ -301,4 +301,3 @@ export default function NewCoursePage() {
     </div>
   );
 }
-
