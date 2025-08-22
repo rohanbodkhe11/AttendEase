@@ -10,6 +10,7 @@ export interface User {
   department?: string;
   class?: string;
   avatarUrl?: string;
+  rollNumber?: string;
 }
 
 export interface Student {

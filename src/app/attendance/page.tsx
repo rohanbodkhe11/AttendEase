@@ -4,7 +4,7 @@
 import { useEffect, useState, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
-import { getCourses, getStudentsForCourse, saveStudentsForCourse, getAttendance, saveAttendanceReport, getStudentsByClass, saveCourses, addStudentsToClass } from '@/lib/data';
+import { getCourses, saveStudentsForCourse, getAttendance, saveAttendanceReport, getStudentsByClass, saveCourses, addStudentsToClass } from '@/lib/data';
 import type { Student, AttendanceRecord as AttendanceRecordType, Course } from '@/lib/types';
 import {
   Select,
@@ -25,6 +25,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { UserPlus, FileUp } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import * as XLSX from 'xlsx';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 
 
 export default function AttendancePage() {
@@ -253,7 +257,10 @@ function AttendanceContent({ course, selectedClass, onStudentsImported }: { cour
                   Class: {selectedClass} | Course Code: {course.courseCode}
               </CardDescription>
             </div>
-            <ImportStudentsDialog course={course} selectedClass={selectedClass} onStudentsImported={onStudentsImported} />
+            <div className="flex gap-2">
+                <AddStudentDialog selectedClass={selectedClass} onStudentAdded={onStudentsImported} />
+                <ImportStudentsDialog course={course} selectedClass={selectedClass} onStudentsImported={onStudentsImported} />
+            </div>
         </div>
         <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 max-w-lg">
           <div>
@@ -293,7 +300,7 @@ function AttendanceContent({ course, selectedClass, onStudentsImported }: { cour
         ) : (
           <div className="text-center py-8 text-muted-foreground">
             <p>No students found for class {selectedClass}.</p>
-            <p className="text-sm">You can import students using the button above.</p>
+            <p className="text-sm">You can import or add students using the buttons above.</p>
           </div>
         )}
         <div className="flex justify-end gap-2 mt-4">
@@ -331,19 +338,19 @@ function ImportStudentsDialog({ course, selectedClass, onStudentsImported }: { c
                 const workbook = XLSX.read(data, { type: 'array' });
                 const sheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[sheetName];
-                const json = XLSX.utils.sheet_to_json<{ rollNumber: string, name: string }>(worksheet);
+                const json = XLSX.utils.sheet_to_json<any>(worksheet);
 
                 if (json.length > 0 && 'rollNumber' in json[0] && 'name' in json[0]) {
                     const newStudents = json.map(item => ({
                         rollNumber: String(item.rollNumber),
-                        name: item.name,
+                        name: String(item.name),
                     }));
                     
-                    addStudentsToClass(selectedClass, newStudents);
+                    const result = addStudentsToClass(selectedClass, newStudents);
 
                     toast({
-                        title: 'Import Successful',
-                        description: `${json.length} students have been added to the class ${selectedClass}.`,
+                        title: 'Import Complete',
+                        description: `${result.added} students were added. ${result.skipped} were skipped as duplicates.`,
                     });
                     onStudentsImported();
                     setIsOpen(false);
@@ -360,6 +367,14 @@ function ImportStudentsDialog({ course, selectedClass, onStudentsImported }: { c
         };
         reader.readAsArrayBuffer(file);
     };
+    
+    // Reset state when dialog is closed
+    useEffect(() => {
+        if (!isOpen) {
+            setFile(null);
+            setIsImporting(false);
+        }
+    }, [isOpen]);
 
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -373,7 +388,7 @@ function ImportStudentsDialog({ course, selectedClass, onStudentsImported }: { c
                 <DialogHeader>
                     <DialogTitle>Import Students for {selectedClass}</DialogTitle>
                     <DialogDescription>
-                        Upload an Excel (.xlsx) file with student information. Ensure the file has columns named "rollNumber" and "name".
+                        Upload an Excel (.xlsx, .xls) file with student information. Ensure the file has columns named "rollNumber" and "name".
                     </DialogDescription>
                 </DialogHeader>
                 <div className="py-4">
@@ -386,6 +401,100 @@ function ImportStudentsDialog({ course, selectedClass, onStudentsImported }: { c
                         {isImporting ? 'Importing...' : 'Import'}
                     </Button>
                 </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
+const addStudentSchema = z.object({
+    name: z.string().min(2, { message: "Name must be at least 2 characters." }),
+    rollNumber: z.string().min(1, { message: "Roll number cannot be empty." }),
+});
+type AddStudentFormValues = z.infer<typeof addStudentSchema>;
+
+function AddStudentDialog({ selectedClass, onStudentAdded }: { selectedClass: string, onStudentAdded: () => void }) {
+    const [isOpen, setIsOpen] = useState(false);
+    const { toast } = useToast();
+    const form = useForm<AddStudentFormValues>({
+        resolver: zodResolver(addStudentSchema),
+        defaultValues: { name: "", rollNumber: ""},
+    });
+
+    const onSubmit = (data: AddStudentFormValues) => {
+        const result = addStudentsToClass(selectedClass, [data]);
+        if (result.added > 0) {
+            toast({
+                title: "Student Added",
+                description: `${data.name} has been added to ${selectedClass}.`
+            });
+            onStudentAdded();
+            setIsOpen(false);
+        } else {
+            toast({
+                variant: 'destructive',
+                title: "Student Exists",
+                description: `A student with that roll number already exists in ${selectedClass}.`
+            })
+        }
+    }
+
+    useEffect(() => {
+        if (!isOpen) {
+            form.reset();
+        }
+    }, [isOpen, form]);
+
+    return (
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+                <Button>
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    Add Student
+                </Button>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Add Student to {selectedClass}</DialogTitle>
+                    <DialogDescription>
+                        Manually add a new student to this class.
+                    </DialogDescription>
+                </DialogHeader>
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+                        <FormField
+                            control={form.control}
+                            name="name"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Student Name</FormLabel>
+                                <FormControl>
+                                <Input placeholder="e.g., Jane Doe" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="rollNumber"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Roll Number</FormLabel>
+                                <FormControl>
+                                <Input placeholder="e.g., 21" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                         <DialogFooter>
+                            <Button variant="ghost" type="button" onClick={() => setIsOpen(false)}>Cancel</Button>
+                            <Button type="submit" disabled={form.formState.isSubmitting}>
+                                {form.formState.isSubmitting ? 'Adding...' : 'Add Student'}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </Form>
             </DialogContent>
         </Dialog>
     )
@@ -414,5 +523,3 @@ function AttendancePageSkeleton() {
     </div>
   )
 }
-
-    

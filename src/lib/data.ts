@@ -2,47 +2,7 @@
 import type { User, Course, Student, AttendanceRecord, AttendanceReport } from './types';
 
 // This will now act as our in-memory "database"
-let users: User[] = [
-  {
-    id: 'student1',
-    name: 'Alice Johnson',
-    email: 'alice@example.com',
-    password: 'password123',
-    role: 'student',
-    department: 'Computer Science',
-    class: 'SE CSE A',
-    avatarUrl: 'https://placehold.co/100x100.png',
-  },
-  {
-    id: 'student2',
-    name: 'Bob Williams',
-    email: 'bob@example.com',
-    password: 'password123',
-    role: 'student',
-    department: 'Computer Science',
-    class: 'SE CSE A',
-    avatarUrl: 'https://placehold.co/100x100.png',
-  },
-   {
-    id: 'student3',
-    name: 'Charlie Brown',
-    email: 'charlie@example.com',
-    password: 'password123',
-    role: 'student',
-    department: 'Computer Science',
-    class: 'SE CSE B',
-    avatarUrl: 'https://placehold.co/100x100.png',
-  },
-  {
-    id: 'faculty1',
-    name: 'Dr. Evelyn Reed',
-    email: 'evelyn@example.com',
-    password: 'password123',
-    role: 'faculty',
-    department: 'Computer Science',
-    avatarUrl: 'https://placehold.co/100x100.png',
-  },
-];
+let users: User[] = [];
 let courses: Course[] = [];
 let attendance: AttendanceRecord[] = [];
 let courseStudents: Record<string, Student[]> = {};
@@ -67,18 +27,21 @@ export const saveStudentsForCourse = (courseId: string, students: Student[]) => 
     saveDataToSession();
 }
 
-export const addStudentsToClass = (className: string, newStudents: { name: string, rollNumber: string }[]) => {
-    const existingStudents = getUsers().filter(u => u.role === 'student');
+export const addStudentsToClass = (className: string, newStudents: { name: string, rollNumber: string }[]): { added: number, skipped: number } => {
+    const allUsers = getUsers(); // Get current users
+    const existingStudentsInClass = allUsers.filter(u => u.role === 'student' && u.class === className);
     const newUsers: User[] = [];
+    let addedCount = 0;
+    let skippedCount = 0;
 
     newStudents.forEach(student => {
-        // A simple check to avoid adding students with the same roll number in the same class
-        const studentExists = existingStudents.some(u => u.class === className && u.id.endsWith(student.rollNumber)); // A bit of a hack for demo
+        const studentExists = existingStudentsInClass.some(u => u.rollNumber === student.rollNumber);
         if (!studentExists) {
             const newUser: User = {
-                id: `student-${Date.now()}-${student.rollNumber}`,
+                id: `user-${Date.now()}-${student.rollNumber}`,
                 name: student.name,
-                email: `${student.name.toLowerCase().replace(' ','.')}@example.com`,
+                rollNumber: student.rollNumber,
+                email: `${student.name.toLowerCase().replace(/\s/g,'.')}.${student.rollNumber}@example.com`,
                 password: 'password123',
                 role: 'student',
                 class: className,
@@ -86,6 +49,9 @@ export const addStudentsToClass = (className: string, newStudents: { name: strin
                 avatarUrl: 'https://placehold.co/100x100.png',
             };
             newUsers.push(newUser);
+            addedCount++;
+        } else {
+            skippedCount++;
         }
     });
 
@@ -93,6 +59,8 @@ export const addStudentsToClass = (className: string, newStudents: { name: strin
         users = [...users, ...newUsers];
         saveDataToSession();
     }
+
+    return { added: addedCount, skipped: skippedCount };
 }
 
 
@@ -100,7 +68,7 @@ export const getStudentsByClass = (className: string): Student[] => {
   return users.filter(u => u.role === 'student' && u.class === className).map(u => ({
     id: u.id,
     name: u.name,
-    rollNumber: `S${u.id.replace('student', '')}`, // Generate a sample roll number
+    rollNumber: u.rollNumber || `S${u.id.replace('student', '')}`, // Generate a sample roll number
     class: u.class || 'N/A'
   }));
 }
@@ -109,7 +77,7 @@ export const getStudents = (): Student[] => {
   return users.filter(u => u.role === 'student').map(u => ({
     id: u.id,
     name: u.name,
-    rollNumber: `S${u.id.replace('student', '')}`, // Generate a sample roll number
+    rollNumber: u.rollNumber || `S${u.id.replace('student', '')}`, // Generate a sample roll number
     class: u.class || 'N/A'
   }));
 }
@@ -194,6 +162,51 @@ function initializeData() {
     return;
   }
 
+  users = [
+    {
+      id: 'student1',
+      rollNumber: '1',
+      name: 'Alice Johnson',
+      email: 'alice@example.com',
+      password: 'password123',
+      role: 'student',
+      department: 'Computer Science',
+      class: 'SE CSE A',
+      avatarUrl: 'https://placehold.co/100x100.png',
+    },
+    {
+      id: 'student2',
+      rollNumber: '2',
+      name: 'Bob Williams',
+      email: 'bob@example.com',
+      password: 'password123',
+      role: 'student',
+      department: 'Computer Science',
+      class: 'SE CSE A',
+      avatarUrl: 'https://placehold.co/100x100.png',
+    },
+     {
+      id: 'student3',
+      rollNumber: '3',
+      name: 'Charlie Brown',
+      email: 'charlie@example.com',
+      password: 'password123',
+      role: 'student',
+      department: 'Computer Science',
+      class: 'SE CSE B',
+      avatarUrl: 'https://placehold.co/100x100.png',
+    },
+    {
+      id: 'faculty1',
+      name: 'Dr. Evelyn Reed',
+      email: 'evelyn@example.com',
+      password: 'password123',
+      role: 'faculty',
+      department: 'Computer Science',
+      avatarUrl: 'https://placehold.co/100x100.png',
+    },
+  ];
+
   const defaultCourse: Course = {
     id: 'course-1',
     name: 'Data Structures',
@@ -213,7 +226,7 @@ function initializeData() {
     .filter(s => defaultCourse.classes.includes(s.class || ''))
     .map(u => ({
         id: u.id,
-        rollNumber: `S${u.id.replace('student','')}`,
+        rollNumber: u.rollNumber || `S${u.id.replace('student','')}`,
         name: u.name,
         class: u.class || 'N/A'
     }));
@@ -224,5 +237,3 @@ function initializeData() {
 
 // Initialize data as soon as this module is loaded
 initializeData();
-
-    
