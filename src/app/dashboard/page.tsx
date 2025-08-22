@@ -7,14 +7,16 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { getCourses, getStudentAttendance, users, students } from "@/lib/data";
 import type { Course, AttendanceRecord, User } from "@/lib/types";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { BookOpen, User as UserIcon, Users, PlusCircle } from "lucide-react";
+import { BookOpen, User as UserIcon, Users, PlusCircle, ArrowRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import Image from 'next/image';
 
 export default function DashboardPage() {
   const { user, isLoading } = useAuth();
@@ -58,6 +60,8 @@ function DashboardSkeleton() {
 function FacultyDashboard({ user }: { user: User }) {
   const courses = getCourses();
   const facultyCourses = courses.filter(c => c.facultyId === user.id);
+  const theoryCourses = facultyCourses.filter(c => c.type === 'Theory');
+  const practicalCourses = facultyCourses.filter(c => c.type === 'Practical');
   const facultyClasses = [...new Set(facultyCourses.map(c => c.class))];
   const totalStudents = students.filter(s => facultyClasses.includes(s.class)).length;
 
@@ -84,57 +88,86 @@ function FacultyDashboard({ user }: { user: User }) {
             <p className="text-xs text-muted-foreground">Students across all your classes</p>
           </CardContent>
         </Card>
-        <Card>
+         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Upcoming Lecture</CardTitle>
+            <CardTitle className="text-sm font-medium">Your Department</CardTitle>
             <UserIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">Data Structures</div>
-            <p className="text-xs text-muted-foreground">Today at 10:00 AM in SY CSE A</p>
+            <div className="text-2xl font-bold">{user.department}</div>
+            <p className="text-xs text-muted-foreground">Your primary department</p>
           </CardContent>
         </Card>
       </div>
-      <div>
-        <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                    <CardTitle>Your Courses</CardTitle>
-                    <CardDescription>An overview of the courses you are teaching.</CardDescription>
-                </div>
-                 <Button asChild>
-                    <Link href="/courses/new">
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        Create Course
-                    </Link>
-                </Button>
-            </CardHeader>
-            <CardContent>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Course</TableHead>
-                            <TableHead>Code</TableHead>
-                            <TableHead>Class</TableHead>
-                            <TableHead className="text-right">Total Lectures</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {facultyCourses.map(course => (
-                            <TableRow key={course.id}>
-                                <TableCell className="font-medium">{course.name}</TableCell>
-                                <TableCell>{course.courseCode}</TableCell>
-                                <TableCell>{course.class}</TableCell>
-                                <TableCell className="text-right">{course.totalLectures}</TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            </CardContent>
-        </Card>
-      </div>
+
+       <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+                <CardTitle>Your Courses</CardTitle>
+                <CardDescription>An overview of the courses you are teaching.</CardDescription>
+            </div>
+                <Button asChild>
+                <Link href="/courses/new">
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Create Course
+                </Link>
+            </Button>
+        </CardHeader>
+        <CardContent>
+            <Tabs defaultValue="theory">
+                <TabsList className="mb-4">
+                    <TabsTrigger value="theory">Theory</TabsTrigger>
+                    <TabsTrigger value="practical">Practical</TabsTrigger>
+                </TabsList>
+                <TabsContent value="theory">
+                    <CourseGrid courses={theoryCourses} />
+                </TabsContent>
+                <TabsContent value="practical">
+                    <CourseGrid courses={practicalCourses} />
+                </TabsContent>
+            </Tabs>
+        </CardContent>
+       </Card>
     </>
   );
+}
+
+function CourseGrid({ courses }: { courses: Course[] }) {
+    if (courses.length === 0) {
+        return <div className="text-center text-muted-foreground py-8">No courses found.</div>
+    }
+    return (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {courses.map((course) => (
+          <Card key={course.id} className="flex flex-col overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
+             <Image
+                src={`https://placehold.co/600x400.png`}
+                alt={course.name}
+                width={600}
+                height={400}
+                className="w-full h-48 object-cover"
+                data-ai-hint="education textbook"
+              />
+            <CardHeader>
+              <CardTitle>{course.name}</CardTitle>
+              <CardDescription>{course.courseCode} - {course.class}</CardDescription>
+            </CardHeader>
+            <CardContent className="flex-grow">
+              <p className="text-sm text-muted-foreground line-clamp-3">
+                {course.description}
+              </p>
+            </CardContent>
+            <CardFooter>
+              <Button asChild className="w-full">
+                <Link href={`/courses/${course.id}`}>
+                  View Details <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </CardFooter>
+          </Card>
+        ))}
+      </div>
+    )
 }
 
 function StudentDashboard({ user }: { user: User }) {
