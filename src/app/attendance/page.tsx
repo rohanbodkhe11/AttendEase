@@ -4,7 +4,7 @@
 import { useEffect, useState, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
-import { getCourses, getStudentsForCourse, saveStudentsForCourse, getAttendance, saveAttendanceReport, getStudentsByClass } from '@/lib/data';
+import { getCourses, getStudentsForCourse, saveStudentsForCourse, getAttendance, saveAttendanceReport, getStudentsByClass, saveCourses } from '@/lib/data';
 import type { Student, AttendanceRecord as AttendanceRecordType, Course } from '@/lib/types';
 import {
   Select,
@@ -24,6 +24,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { UserPlus, FileUp } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import * as XLSX from 'xlsx';
 
 
 export default function AttendancePage() {
@@ -84,7 +85,7 @@ function AttendanceCourseSelector({ courses }: { courses: Course[] }) {
         }
     }, [selectedClass, selectedCourseId, courses]);
 
-    const handleCourseStudentsUpdate = (courseId: string, students: Student[]) => {
+    const handleStudentsImported = () => {
       // This is a bit of a hack to force a re-render of the child
       // In a real app, you'd use a more robust state management solution
       const currentCourseId = selectedCourseId;
@@ -128,7 +129,7 @@ function AttendanceCourseSelector({ courses }: { courses: Course[] }) {
             </div>
 
             {selectedCourse && selectedClass && (
-                <AttendanceContent course={selectedCourse} selectedClass={selectedClass} onStudentsUpdate={handleCourseStudentsUpdate} />
+                <AttendanceContent course={selectedCourse} selectedClass={selectedClass} onStudentsImported={handleStudentsImported} />
             )}
         </div>
     )
@@ -150,7 +151,7 @@ const practicalTimeSlots = [
 ];
 
 
-function AttendanceContent({ course, selectedClass, onStudentsUpdate }: { course: Course, selectedClass: string, onStudentsUpdate: (courseId: string, students: Student[]) => void }) {
+function AttendanceContent({ course, selectedClass, onStudentsImported }: { course: Course, selectedClass: string, onStudentsImported: () => void }) {
   const [currentAttendance, setCurrentAttendance] = useState<Map<string, boolean>>(new Map());
   const { toast } = useToast();
   const [pastAttendance, setPastAttendance] = useState<AttendanceRecordType[]>([]);
@@ -252,7 +253,7 @@ function AttendanceContent({ course, selectedClass, onStudentsUpdate }: { course
                   Class: {selectedClass} | Course Code: {course.courseCode}
               </CardDescription>
             </div>
-            {/* <AddStudentsDialog course={course} onStudentsAdded={handleStudentsAdded} /> */}
+            <ImportStudentsDialog course={course} selectedClass={selectedClass} onStudentsImported={onStudentsImported} />
         </div>
         <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 max-w-lg">
           <div>
@@ -292,7 +293,7 @@ function AttendanceContent({ course, selectedClass, onStudentsUpdate }: { course
         ) : (
           <div className="text-center py-8 text-muted-foreground">
             <p>No students found for class {selectedClass}.</p>
-            <p className="text-sm">You can add students via the main student management area.</p>
+            <p className="text-sm">You can import students using the button above.</p>
           </div>
         )}
         <div className="flex justify-end gap-2 mt-4">
@@ -302,6 +303,93 @@ function AttendanceContent({ course, selectedClass, onStudentsUpdate }: { course
       </CardContent>
     </Card>
   );
+}
+
+function ImportStudentsDialog({ course, selectedClass, onStudentsImported }: { course: Course, selectedClass: string, onStudentsImported: () => void }) {
+    const [isOpen, setIsOpen] = useState(false);
+    const [file, setFile] = useState<File | null>(null);
+    const [isImporting, setIsImporting] = useState(false);
+    const { toast } = useToast();
+
+    const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files) {
+            setFile(e.target.files[0]);
+        }
+    };
+
+    const handleImport = () => {
+        if (!file) {
+            toast({ variant: 'destructive', title: 'No file selected', description: 'Please select an Excel file to import.' });
+            return;
+        }
+
+        setIsImporting(true);
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = new Uint8Array(e.target?.result as ArrayBuffer);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                const json = XLSX.utils.sheet_to_json<{ rollNumber: string, name: string }>(worksheet);
+
+                if (json.length > 0 && 'rollNumber' in json[0] && 'name' in json[0]) {
+                    const allCourses = getCourses();
+                    const courseToUpdate = allCourses.find(c => c.id === course.id);
+                    if (courseToUpdate) {
+                       // This is a placeholder for proper student management.
+                       // In a real app, you would have a separate student database and link students to courses.
+                       // For this prototype, we'll just log the imported students.
+                        console.log("Imported Students for course " + course.name + ":", json);
+
+                        toast({
+                            title: 'Import Successful',
+                            description: `${json.length} students have been prepared for import. In a real app, they would be saved now.`,
+                        });
+                        onStudentsImported();
+                        setIsOpen(false);
+                        setFile(null);
+                    }
+                } else {
+                    toast({ variant: 'destructive', title: 'Invalid File Format', description: 'The Excel file must have "rollNumber" and "name" columns.' });
+                }
+            } catch (error) {
+                toast({ variant: 'destructive', title: 'Error Reading File', description: 'There was a problem processing the Excel file.' });
+            } finally {
+                setIsImporting(false);
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    };
+
+    return (
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+                <Button variant="outline">
+                    <FileUp className="mr-2 h-4 w-4" />
+                    Import Students
+                </Button>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Import Students for {course.name}</DialogTitle>
+                    <DialogDescription>
+                        Upload an Excel (.xlsx) file with student information. Ensure the file has columns named "rollNumber" and "name".
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="py-4">
+                    <Label htmlFor="student-file">Excel File</Label>
+                    <Input id="student-file" type="file" onChange={handleFileChange} accept=".xlsx, .xls" />
+                </div>
+                <DialogFooter>
+                    <Button variant="ghost" onClick={() => setIsOpen(false)}>Cancel</Button>
+                    <Button onClick={handleImport} disabled={!file || isImporting}>
+                        {isImporting ? 'Importing...' : 'Import'}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
 }
 
 function AttendancePageSkeleton() {
