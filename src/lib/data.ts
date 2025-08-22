@@ -48,66 +48,13 @@ let attendance: AttendanceRecord[] = [];
 let courseStudents: Record<string, Student[]> = {};
 let attendanceReports: AttendanceReport[] = [];
 
+// Flag to ensure initialization only runs once
+let isInitialized = false;
 
 // --- Data Persistence Simulation ---
-function initializeData() {
-  if (typeof window !== 'undefined') {
-    const storedUsers = sessionStorage.getItem('users');
-    if (storedUsers) users = JSON.parse(storedUsers);
-    
-    const storedCourses = sessionStorage.getItem('courses');
-    if (storedCourses) courses = JSON.parse(storedCourses);
-    
-    const storedCourseStudents = sessionStorage.getItem('courseStudents');
-    if (storedCourseStudents) courseStudents = JSON.parse(storedCourseStudents);
-
-    const storedAttendance = sessionStorage.getItem('attendance');
-    if (storedAttendance) attendance = JSON.parse(storedAttendance);
-
-    const storedAttendanceReports = sessionStorage.getItem('attendanceReports');
-    if (storedAttendanceReports) attendanceReports = JSON.parse(storedAttendanceReports);
-    
-    // If there is no stored data, initialize with some defaults for demo purposes
-    if (!storedCourses || JSON.parse(storedCourses).length === 0) {
-      const defaultCourse: Course = {
-        id: 'course-1',
-        name: 'Data Structures',
-        courseCode: 'CS301',
-        facultyId: 'faculty1',
-        facultyName: 'Dr. Evelyn Reed',
-        classes: ['SE CSE A', 'SE CSE B'],
-        totalLectures: 40,
-        description: 'An introductory course on fundamental data structures.',
-        type: 'Theory',
-      };
-      courses = [defaultCourse];
-      
-      courseStudents[defaultCourse.id] = getUsers().filter(u => u.role === 'student').map(u => ({
-          id: u.id,
-          rollNumber: `S${u.id.replace('student','')}`,
-          name: u.name,
-          class: u.class || 'N/A'
-      }));
-      
-      saveDataToSession();
-    }
-  }
-}
-
-// Initialize data as soon as this module is loaded in the browser
-if (typeof window !== 'undefined') {
-    initializeData();
-}
-
-
 function saveDataToSession() {
-  if (typeof window !== 'undefined') {
-    sessionStorage.setItem('users', JSON.stringify(users));
-    sessionStorage.setItem('courses', JSON.stringify(courses));
-    sessionStorage.setItem('courseStudents', JSON.stringify(courseStudents));
-    sessionStorage.setItem('attendance', JSON.stringify(attendance));
-    sessionStorage.setItem('attendanceReports', JSON.stringify(attendanceReports));
-  }
+  // This function is a placeholder for a real database.
+  // In this prototype, data is only stored in-memory for the session.
 }
 
 // --- Student Management for Courses ---
@@ -203,7 +150,7 @@ export const getStudentAttendance = (studentId: string): { course: Course; recor
   if (!student) return [];
   
   return courses
-    .filter(course => course.classes.includes(student.class || ''))
+    .filter(course => Array.isArray(course.classes) && course.classes.includes(student.class || ''))
     .map(course => ({
         course,
         records: attendance.filter(att => att.studentId === studentId && att.courseId === course.id),
@@ -213,3 +160,39 @@ export const getStudentAttendance = (studentId: string): { course: Course; recor
 export const getCourseAttendance = (courseId: string): AttendanceRecord[] => {
   return attendance.filter(att => att.courseId === courseId);
 };
+
+function initializeData() {
+  if (isInitialized) {
+    return;
+  }
+  isInitialized = true;
+
+  const defaultCourse: Course = {
+    id: 'course-1',
+    name: 'Data Structures',
+    courseCode: 'CS301',
+    facultyId: 'faculty1',
+    facultyName: 'Dr. Evelyn Reed',
+    classes: ['SE CSE A', 'SE CSE B'],
+    totalLectures: 40,
+    description: 'An introductory course on fundamental data structures.',
+    type: 'Theory',
+  };
+  courses = [defaultCourse];
+
+  // Correctly get students for the default course
+  const allStudents = users.filter(u => u.role === 'student');
+  courseStudents[defaultCourse.id] = allStudents
+    .filter(s => defaultCourse.classes.includes(s.class || ''))
+    .map(u => ({
+        id: u.id,
+        rollNumber: `S${u.id.replace('student','')}`,
+        name: u.name,
+        class: u.class || 'N/A'
+    }));
+
+  saveDataToSession();
+}
+
+// Initialize data as soon as this module is loaded
+initializeData();

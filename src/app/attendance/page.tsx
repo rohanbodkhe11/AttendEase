@@ -3,7 +3,6 @@
 
 import { useEffect, useState, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import * as XLSX from 'xlsx';
 import { useAuth } from '@/hooks/use-auth';
 import { getCourses, getStudentsForCourse, saveStudentsForCourse, getAttendance, saveAttendanceReport, getStudentsByClass } from '@/lib/data';
 import type { Student, AttendanceRecord as AttendanceRecordType, Course } from '@/lib/types';
