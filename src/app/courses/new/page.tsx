@@ -42,13 +42,19 @@ import { ArrowLeft } from 'lucide-react';
 const courseSchema = z.object({
   name: z.string().min(3, { message: 'Course name must be at least 3 characters.' }),
   courseCode: z.string().min(3, { message: 'Course code must be at least 3 characters.' }),
-  class: z.string().min(2, { message: 'Class must be at least 2 characters.' }),
+  year: z.string({ required_error: 'Please select a year.' }),
+  department: z.string({ required_error: 'Please select a department.' }),
+  division: z.string({ required_error: 'Please select a division.' }),
   totalLectures: z.coerce.number().int().min(1, { message: 'Total lectures must be at least 1.' }),
   description: z.string().min(10, { message: 'Description must be at least 10 characters.' }),
   type: z.enum(['Theory', 'Practical'], { required_error: 'You must select a course type.' }),
 });
 
 type CourseFormValues = z.infer<typeof courseSchema>;
+
+const years = ['FE', 'SE', 'TE', 'BE'];
+const departments = ['CSE', 'IT', 'ENTC', 'Mech', 'Civil', 'AI & DS'];
+const divisions = ['A', 'B', 'C', 'D', 'E'];
 
 export default function NewCoursePage() {
   const { user } = useAuth();
@@ -61,7 +67,6 @@ export default function NewCoursePage() {
     defaultValues: {
       name: '',
       courseCode: '',
-      class: '',
       totalLectures: 40,
       description: '',
     },
@@ -84,10 +89,15 @@ export default function NewCoursePage() {
     try {
       const courses = getCourses();
       const newCourse: Course = {
-        id: `course${courses.length + 1}`,
+        id: `course-${Date.now()}`,
         facultyId: facultyUser.id,
         facultyName: facultyUser.name,
-        ...data,
+        name: data.name,
+        courseCode: data.courseCode,
+        class: `${data.year} ${data.department} ${data.division}`,
+        totalLectures: data.totalLectures,
+        description: data.description,
+        type: data.type,
       };
 
       const updatedCourses = [...courses, newCourse];
@@ -163,22 +173,69 @@ export default function NewCoursePage() {
                         </FormItem>
                         )}
                     />
-                     <FormField
-                        control={form.control}
-                        name="class"
-                        render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Class</FormLabel>
-                            <FormControl>
-                            <Input placeholder="e.g., BE CSE A" {...field} />
-                            </FormControl>
-                             <FormDescription>
-                                Which class is this course for?
-                            </FormDescription>
-                            <FormMessage />
-                        </FormItem>
-                        )}
-                    />
+                    <div className="md:col-span-2 grid md:grid-cols-3 gap-6">
+                         <FormField
+                            control={form.control}
+                            name="year"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Year</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                    <SelectTrigger>
+                                    <SelectValue placeholder="Select year" />
+                                    </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    {years.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}
+                                </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="department"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Department</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                    <SelectTrigger>
+                                    <SelectValue placeholder="Select department" />
+                                    </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                     {departments.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+                                </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                         <FormField
+                            control={form.control}
+                            name="division"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Division</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                    <SelectTrigger>
+                                    <SelectValue placeholder="Select division" />
+                                    </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    {divisions.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+                                </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                    </div>
+                   
                     <FormField
                         control={form.control}
                         name="totalLectures"
@@ -244,3 +301,4 @@ export default function NewCoursePage() {
     </div>
   );
 }
+
