@@ -73,6 +73,9 @@ export default function LecturesPage() {
       description: `Attendance for ${selectedCourse?.name} on ${new Date(lectureDateTime).toLocaleString()} has been saved.`,
     })
     console.log("Submitted Attendance:", Array.from(currentAttendance.entries()));
+    // Here you would typically send this data to a backend to be saved permanently.
+    // For this prototype, we'll just log it.
+    
     // Reset state after submission
     setSelectedCourse(null);
     setCurrentAttendance(new Map());
@@ -84,20 +87,21 @@ export default function LecturesPage() {
       <div className="flex items-center justify-between space-y-2">
         <h2 className="text-3xl font-bold tracking-tight">Lectures</h2>
       </div>
-      <Tabs defaultValue="theory" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="theory">Theory</TabsTrigger>
-          <TabsTrigger value="practical">Practical</TabsTrigger>
-        </TabsList>
-        <TabsContent value="theory">
-          <CourseList courses={theoryCourses} onCourseSelect={handleCourseSelect} title="Theory Courses" />
-        </TabsContent>
-        <TabsContent value="practical">
-          <CourseList courses={practicalCourses} onCourseSelect={handleCourseSelect} title="Practical Courses" />
-        </TabsContent>
-      </Tabs>
-
-      {selectedCourse && (
+      
+      {!selectedCourse ? (
+        <Tabs defaultValue="theory" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="theory">Theory</TabsTrigger>
+            <TabsTrigger value="practical">Practical</TabsTrigger>
+          </TabsList>
+          <TabsContent value="theory">
+            <CourseList courses={theoryCourses} onCourseSelect={handleCourseSelect} title="Theory Courses" />
+          </TabsContent>
+          <TabsContent value="practical">
+            <CourseList courses={practicalCourses} onCourseSelect={handleCourseSelect} title="Practical Courses" />
+          </TabsContent>
+        </Tabs>
+      ) : (
         <Card>
           <CardHeader>
             <CardTitle>{selectedCourse.name} - Mark Attendance</CardTitle>
@@ -123,7 +127,7 @@ export default function LecturesPage() {
             />
             <div className="flex justify-end gap-2 mt-4">
               <Button variant="outline" onClick={() => setSelectedCourse(null)}>Cancel</Button>
-              <Button onClick={handleSubmit}>Submit Attendance</Button>
+              <Button onClick={handleSubmit} disabled={currentAttendance.size === 0}>Submit Attendance</Button>
             </div>
           </CardContent>
         </Card>
@@ -137,6 +141,7 @@ function CourseList({ courses, onCourseSelect, title }: { courses: Course[], onC
     <Card>
       <CardHeader>
         <CardTitle>{title}</CardTitle>
+        <CardDescription>Select a course to mark attendance for a new lecture.</CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {courses.map(course => (
@@ -151,7 +156,7 @@ function CourseList({ courses, onCourseSelect, title }: { courses: Course[], onC
             </Button>
           </Card>
         ))}
-        {courses.length === 0 && <p className="text-muted-foreground col-span-full">No {title.toLowerCase()} found.</p>}
+        {courses.length === 0 && <p className="text-muted-foreground col-span-full py-4 text-center">No {title.toLowerCase()} found. Please create one first.</p>}
       </CardContent>
     </Card>
   )
@@ -170,6 +175,7 @@ function LecturesPageSkeleton() {
         <Card>
             <CardHeader>
                 <Skeleton className="h-7 w-48" />
+                <Skeleton className="h-5 w-64" />
             </CardHeader>
             <CardContent className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 <Skeleton className="h-36" />
