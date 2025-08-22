@@ -1,10 +1,11 @@
 
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
+import * as XLSX from 'xlsx';
 import { useAuth } from '@/hooks/use-auth';
-import { getCourses, getStudentsForCourse, saveStudentsForCourse, getAttendance } from '@/lib/data';
+import { getCourses, getStudentsForCourse, saveStudentsForCourse, getAttendance, saveAttendanceReport } from '@/lib/data';
 import type { Student, AttendanceRecord as AttendanceRecordType, Course } from '@/lib/types';
 import {
   Select,
@@ -22,8 +23,7 @@ import { AttendanceSheet } from '@/components/app/attendance-sheet';
 import { SmartReviewDialog } from '@/components/app/smart-review-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Textarea } from '@/components/ui/textarea';
-import { UserPlus } from 'lucide-react';
+import { UserPlus, FileUp } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 
 
@@ -134,6 +134,7 @@ function AttendanceContent({ course, onStudentsUpdate }: { course: Course, onStu
   const [pastAttendance, setPastAttendance] = useState<AttendanceRecordType[]>([]);
   const [lectureDate, setLectureDate] = useState('');
   const [lectureTimeSlot, setLectureTimeSlot] = useState('');
+  const router = useRouter();
 
 
   const [courseStudents, setCourseStudents] = useState<Student[]>([]);
@@ -146,6 +147,8 @@ function AttendanceContent({ course, onStudentsUpdate }: { course: Course, onStu
     const now = new Date();
     setLectureDate(now.toISOString().split('T')[0]);
     setLectureTimeSlot('');
+    setCurrentAttendance(new Map());
+
 
   }, [course]);
 
@@ -171,12 +174,32 @@ function AttendanceContent({ course, onStudentsUpdate }: { course: Course, onStu
       });
       return;
     }
+
+    const attendanceArray = courseStudents.map(student => ({
+        studentId: student.id,
+        studentName: student.name,
+        rollNumber: student.rollNumber,
+        isPresent: currentAttendance.get(student.id) ?? false
+    }));
+
+    const report = {
+        id: `rep-${Date.now()}`,
+        courseId: course.id,
+        courseName: course.name,
+        courseCode: course.courseCode,
+        class: course.class,
+        date: lectureDate,
+        timeSlot: lectureTimeSlot,
+        attendance: attendanceArray,
+    };
+    
+    saveAttendanceReport(report);
     toast({
       title: "Attendance Submitted",
       description: `Attendance for ${course?.name} has been saved.`,
     })
-    console.log("Submitted Attendance:", Array.from(currentAttendance.entries()));
-    // Here you would typically send the data to your backend
+    
+    router.push(`/reports/${report.id}`);
   };
 
   const getSmartReviewInput = () => {
@@ -260,7 +283,7 @@ function AttendanceContent({ course, onStudentsUpdate }: { course: Course, onStu
         )}
         <div className="flex justify-end gap-2 mt-4">
             {currentAttendance.size > 0 && <SmartReviewDialog input={getSmartReviewInput()} />}
-            <Button onClick={handleSubmit} disabled={currentAttendance.size === 0 || courseStudents.length === 0}>Submit Attendance</Button>
+            <Button onClick={handleSubmit} disabled={courseStudents.length === 0}>Submit Attendance</Button>
         </div>
       </CardContent>
     </Card>
@@ -269,61 +292,99 @@ function AttendanceContent({ course, onStudentsUpdate }: { course: Course, onStu
 
 function AddStudentsDialog({ course, onStudentsAdded }: { course: Course, onStudentsAdded: (students: Student[]) => void }) {
     const [isOpen, setIsOpen] = useState(false);
-    const [studentInput, setStudentInput] = useState('');
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const { toast } = useToast();
 
+    const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files) {
+            setSelectedFile(e.target.files[0]);
+        }
+    };
+
     const handleAdd = () => {
-        const lines = studentInput.trim().split('\n').filter(line => line.trim() !== '');
-        if (lines.length === 0) {
+        if (!selectedFile) {
             toast({
                 variant: 'destructive',
-                title: 'No input provided',
-                description: 'Please enter student roll numbers and names.'
+                title: 'No file selected',
+                description: 'Please select an Excel file to upload.'
             });
             return;
         }
 
-        const newStudents: Student[] = [];
-        const existingStudents = getStudentsForCourse(course.id);
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = new Uint8Array(e.target?.result as ArrayBuffer);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-        for (const line of lines) {
-            const parts = line.split(/[\s,]+/); // Split by space or comma
-            if (parts.length < 2) {
+                const newStudents: Student[] = [];
+                const existingStudents = getStudentsForCourse(course.id);
+                
+                // Start from row 1 to skip header
+                for (let i = 1; i < jsonData.length; i++) {
+                    const row = jsonData[i] as any[];
+                    if (!row || row.length < 2) continue;
+
+                    const rollNumber = String(row[0]).trim();
+                    const name = String(row[1]).trim();
+
+                    if (!rollNumber || !name) continue;
+
+                    if (existingStudents.some(s => s.rollNumber === rollNumber)) {
+                        toast({
+                            variant: 'destructive',
+                            title: 'Student Already Exists',
+                            description: `Student with roll number ${rollNumber} is already in this course. Skipping.`
+                        });
+                        continue; // Skip existing student
+                    }
+
+                    newStudents.push({
+                        id: `student-${course.id}-${rollNumber}`,
+                        rollNumber,
+                        name,
+                        class: course.class
+                    });
+                }
+                
+                if (newStudents.length > 0) {
+                    onStudentsAdded(newStudents);
+                    toast({
+                        title: 'Students Added',
+                        description: `${newStudents.length} new student(s) have been added to the course.`
+                    });
+                } else {
+                     toast({
+                        title: 'No New Students Added',
+                        description: `All students from the file were already in the course or the file was empty.`
+                    });
+                }
+
+                setSelectedFile(null);
+                setIsOpen(false);
+            } catch (error) {
+                console.error("Error parsing Excel file:", error);
                 toast({
                     variant: 'destructive',
-                    title: 'Invalid Format',
-                    description: `The line "${line}" is not in the correct format (RollNumber Name).`
+                    title: 'Error Parsing File',
+                    description: 'Could not parse the Excel file. Please ensure it is in the correct format (RollNumber, Name) and not corrupted.'
                 });
-                return;
             }
-            const rollNumber = parts[0];
-            const name = parts.slice(1).join(' ');
+        };
 
-            if(existingStudents.some(s => s.rollNumber === rollNumber)) {
-                toast({
-                    variant: 'destructive',
-                    title: 'Student Already Exists',
-                    description: `Student with roll number ${rollNumber} is already in this course.`
-                });
-                return;
-            }
-            
-            newStudents.push({
-                id: `student-${course.id}-${rollNumber}`,
-                rollNumber,
-                name,
-                class: course.class
+        reader.onerror = () => {
+             toast({
+                variant: 'destructive',
+                title: 'Error Reading File',
+                description: 'There was an error reading the selected file.'
             });
         }
         
-        onStudentsAdded(newStudents);
-        toast({
-            title: 'Students Added',
-            description: `${newStudents.length} student(s) have been added to the course.`
-        });
-        setStudentInput('');
-        setIsOpen(false);
-    }
+        reader.readAsArrayBuffer(selectedFile);
+    };
 
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -334,23 +395,23 @@ function AddStudentsDialog({ course, onStudentsAdded }: { course: Course, onStud
                 <DialogHeader>
                     <DialogTitle>Add Students to {course.name}</DialogTitle>
                     <DialogDescription>
-                        Enter student details below, one student per line.
-                        Format: RollNumber Name (e.g., S01 John Doe)
+                        Upload an Excel file (.xlsx, .xls) with student data.
+                        Format: Column A should be Roll Number, Column B should be Name. The first row is assumed to be a header and will be skipped.
                     </DialogDescription>
                 </DialogHeader>
                 <div className="py-4">
-                    <Textarea 
-                        placeholder="S01 John Doe
-S02 Jane Smith
-S03 Peter Jones"
-                        value={studentInput}
-                        onChange={(e) => setStudentInput(e.target.value)}
-                        className="h-48"
+                    <Label htmlFor="student-file" className="sr-only">Student Excel File</Label>
+                    <Input 
+                        id="student-file"
+                        type="file"
+                        accept=".xlsx, .xls"
+                        onChange={handleFileChange}
                     />
+                    {selectedFile && <p className="text-sm text-muted-foreground mt-2">Selected: {selectedFile.name}</p>}
                 </div>
                 <DialogFooter>
-                    <Button variant="ghost" onClick={() => setIsOpen(false)}>Cancel</Button>
-                    <Button onClick={handleAdd}>Add Students</Button>
+                    <Button variant="ghost" onClick={() => { setIsOpen(false); setSelectedFile(null); }}>Cancel</Button>
+                    <Button onClick={handleAdd} disabled={!selectedFile}><FileUp className="mr-2" /> Add from File</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>

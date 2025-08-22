@@ -1,5 +1,5 @@
 
-import type { User, Course, Student, AttendanceRecord } from './types';
+import type { User, Course, Student, AttendanceRecord, AttendanceReport } from './types';
 
 // This will now act as our in-memory "database"
 let users: User[] = [
@@ -46,34 +46,45 @@ let users: User[] = [
 let courses: Course[] = [];
 let attendance: AttendanceRecord[] = [];
 let courseStudents: Record<string, Student[]> = {};
+let attendanceReports: AttendanceReport[] = [];
 
 
 // --- Data Persistence Simulation ---
 // In a real app, these would interact with a database.
 // For this prototype, we'll use session storage to persist data across reloads on the client.
+// We use a check for `typeof window` to ensure this code doesn't break server-side rendering.
 
 function initializeData() {
   if (typeof window !== 'undefined') {
     const storedUsers = sessionStorage.getItem('users');
-    users = storedUsers ? JSON.parse(storedUsers) : users;
-    sessionStorage.setItem('users', JSON.stringify(users));
-
+    if (storedUsers) users = JSON.parse(storedUsers);
+    
     const storedCourses = sessionStorage.getItem('courses');
-    courses = storedCourses ? JSON.parse(storedCourses) : [];
-    sessionStorage.setItem('courses', JSON.stringify(courses));
+    if (storedCourses) courses = JSON.parse(storedCourses);
     
     const storedCourseStudents = sessionStorage.getItem('courseStudents');
-    courseStudents = storedCourseStudents ? JSON.parse(storedCourseStudents) : {};
-    sessionStorage.setItem('courseStudents', JSON.stringify(courseStudents));
+    if (storedCourseStudents) courseStudents = JSON.parse(storedCourseStudents);
 
     const storedAttendance = sessionStorage.getItem('attendance');
-    attendance = storedAttendance ? JSON.parse(storedAttendance) : [];
-    sessionStorage.setItem('attendance', JSON.stringify(attendance));
+    if (storedAttendance) attendance = JSON.parse(storedAttendance);
+
+    const storedAttendanceReports = sessionStorage.getItem('attendanceReports');
+    if (storedAttendanceReports) attendanceReports = JSON.parse(storedAttendanceReports);
   }
 }
 
 // Initialize data as soon as this module is loaded
 initializeData();
+
+function saveDataToSession() {
+  if (typeof window !== 'undefined') {
+    sessionStorage.setItem('users', JSON.stringify(users));
+    sessionStorage.setItem('courses', JSON.stringify(courses));
+    sessionStorage.setItem('courseStudents', JSON.stringify(courseStudents));
+    sessionStorage.setItem('attendance', JSON.stringify(attendance));
+    sessionStorage.setItem('attendanceReports', JSON.stringify(attendanceReports));
+  }
+}
 
 // --- Student Management for Courses ---
 export const getStudentsForCourse = (courseId: string): Student[] => {
@@ -82,20 +93,18 @@ export const getStudentsForCourse = (courseId: string): Student[] => {
 
 export const saveStudentsForCourse = (courseId: string, students: Student[]) => {
     courseStudents[courseId] = students;
-    if (typeof window !== 'undefined') {
-        sessionStorage.setItem('courseStudents', JSON.stringify(courseStudents));
-    }
+    saveDataToSession();
 }
 
 
-export const students: Student[] = [
-  { id: 'student1', rollNumber: 'S01', name: 'Alice Johnson', class: 'SY CSE A' },
-  { id: 'student2', rollNumber: 'S02', name: 'Bob Williams', class: 'SY CSE A' },
-  { id: 'student3', rollNumber: 'S03', name: 'Charlie Brown', class: 'SY CSE A' },
-  { id: 'student4', rollNumber: 'S04', name: 'Diana Miller', class: 'SY CSE A' },
-  { id: 'student5', rollNumber: 'S05', name: 'Ethan Davis', class: 'SY CSE A' },
-  { id: 'student6', rollNumber: 'S06', name: 'Fiona Garcia', class: 'SY CSE A' },
-];
+export const getStudents = (): Student[] => {
+  return users.filter(u => u.role === 'student').map(u => ({
+    id: u.id,
+    name: u.name,
+    rollNumber: `S${u.id.replace('student', '')}`, // Generate a sample roll number
+    class: u.class || 'N/A'
+  }));
+}
 
 // --- User Management ---
 export const getUsers = (): User[] => {
@@ -104,9 +113,7 @@ export const getUsers = (): User[] => {
 
 export const saveUsers = (newUsers: User[]) => {
   users = newUsers;
-  if (typeof window !== 'undefined') {
-    sessionStorage.setItem('users', JSON.stringify(users));
-  }
+  saveDataToSession();
 };
 
 
@@ -117,75 +124,58 @@ export const getCourses = (): Course[] => {
 
 export const saveCourses = (newCourses: Course[]) => {
   courses = newCourses;
-  if (typeof window !== 'undefined') {
-    sessionStorage.setItem('courses', JSON.stringify(courses));
-  }
+  saveDataToSession();
 };
 
 
 // --- Attendance Management ---
-const generateAttendance = (currentCourses: Course[]) => {
-    if (currentCourses.length === 0 || Object.keys(courseStudents).length === 0) {
-      saveAttendance([]); // Clear attendance if no courses or students
-      return;
-    }
-
-    let newAttendance: AttendanceRecord[] = [];
-    const dates: string[] = [];
-    for(let i = 10; i > 0; i--) {
-        dates.push(new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
-    }
-
-    currentCourses.forEach(course => {
-        const studentsForCourse = getStudentsForCourse(course.id);
-        if (studentsForCourse.length > 0) {
-            studentsForCourse.forEach(student => {
-                dates.forEach(date => {
-                    let isPresent = Math.random() > 0.15; // 85% chance of being present
-                    newAttendance.push({
-                        id: `att${newAttendance.length + 1}`,
-                        courseId: course.id,
-                        studentId: student.id,
-                        date: date,
-                        isPresent: isPresent,
-                    });
-                });
-            });
-        }
-    });
-    saveAttendance(newAttendance);
-};
-
 export const getAttendance = (): AttendanceRecord[] => {
     return attendance;
 }
 
 export const saveAttendance = (newAttendance: AttendanceRecord[]) => {
     attendance = newAttendance;
-    if (typeof window !== 'undefined') {
-        sessionStorage.setItem('attendance', JSON.stringify(attendance));
-    }
+    saveDataToSession();
+}
+
+
+// --- Attendance Report Management ---
+export const getAttendanceReports = (): AttendanceReport[] => {
+    return attendanceReports;
+}
+
+export const getAttendanceReportById = (reportId: string): AttendanceReport | undefined => {
+    return attendanceReports.find(r => r.id === reportId);
+}
+
+export const saveAttendanceReport = (report: AttendanceReport) => {
+    attendanceReports.push(report);
+    // Also save the individual records for historical data
+    const newAttendanceRecords = report.attendance.map(att => ({
+        id: `att-${report.id}-${att.studentId}`,
+        courseId: report.courseId,
+        studentId: att.studentId,
+        date: report.date,
+        isPresent: att.isPresent
+    }));
+    attendance.push(...newAttendanceRecords);
+    saveDataToSession();
 }
 
 
 // --- Helper Functions for Data Querying ---
 export const getStudentAttendance = (studentId: string): { course: Course; records: AttendanceRecord[] }[] => {
-  const allCourses = getCourses();
-  const allAttendance = getAttendance();
-  return allCourses
+  return courses
     .filter(course => {
         const studentInCourse = getStudentsForCourse(course.id).some(s => s.id === studentId);
         return studentInCourse;
     })
     .map(course => ({
         course,
-        records: allAttendance.filter(att => att.studentId === studentId && att.courseId === course.id),
+        records: attendance.filter(att => att.studentId === studentId && att.courseId === course.id),
     }));
 };
 
 export const getCourseAttendance = (courseId: string): AttendanceRecord[] => {
-  const allAttendance = getAttendance();
-  return allAttendance.filter(att => att.courseId === courseId);
+  return attendance.filter(att => att.courseId === courseId);
 };
-
-    

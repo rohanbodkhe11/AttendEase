@@ -16,14 +16,14 @@ import { Logo } from "./logo";
 import { Separator } from "../ui/separator";
 import { useAuth } from "@/hooks/use-auth";
 import type { User } from "@/lib/types";
-import { LayoutDashboard, BookCheck, BookUser, LogOut, BookCopy } from "lucide-react";
+import { LayoutDashboard, BookCheck, BookUser, LogOut, BookCopy, FileText } from "lucide-react";
 import { Button } from "../ui/button";
 import { cn } from "@/lib/utils";
 
 const facultyNavItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/attendance", icon: BookCheck, label: "Mark Attendance" },
-  { href: "/lectures", icon: BookCopy, label: "Lectures" },
+  { href: "/reports", icon: FileText, label: "Reports" },
   { href: "/courses", icon: BookUser, label: "Courses" },
 ];
 

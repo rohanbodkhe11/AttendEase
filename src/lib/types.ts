@@ -37,3 +37,19 @@ export interface AttendanceRecord {
   date: string;
   isPresent: boolean;
 }
+
+export interface AttendanceReport {
+  id: string;
+  courseId: string;
+  courseName: string;
+  courseCode: string;
+  class: string;
+  date: string;
+  timeSlot: string;
+  attendance: {
+    studentId: string;
+    studentName: string;
+    rollNumber: string;
+    isPresent: boolean;
+  }[];
+}
