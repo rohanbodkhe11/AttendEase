@@ -54,7 +54,7 @@ export const students: Student[] = [
 
 let courses: Course[] = [];
 
-export const pastAttendance: AttendanceRecord[] = [];
+let pastAttendance: AttendanceRecord[] = [];
 
 // Course data management with sessionStorage
 export const getCourses = (): Course[] => {
@@ -83,13 +83,15 @@ export const saveCourses = (newCourses: Course[]) => {
 
 
 const generateAttendance = () => {
-  if (pastAttendance.length > 0) return; // Don't generate if already populated
+  const currentCourses = getCourses();
+  if (pastAttendance.length > 0 || currentCourses.length === 0) return; // Don't generate if already populated or no courses
+  
   const dates: string[] = [];
   for(let i=10; i>0; i--) {
     dates.push(new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
   }
 
-  getCourses().forEach(course => {
+  currentCourses.forEach(course => {
     students.filter(s => s.class === course.class).forEach(student => {
       dates.forEach(date => {
         // Alice has good attendance, Bob has okay, Charlie is often absent
