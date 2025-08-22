@@ -103,9 +103,6 @@ export const pastAttendance: AttendanceRecord[] = [];
 
 // Course data management with sessionStorage
 export const getCourses = (): Course[] => {
-  if (typeof window === 'undefined') {
-    return courses;
-  }
   try {
     const storedCourses = sessionStorage.getItem('courses');
     if (storedCourses) {
@@ -115,18 +112,14 @@ export const getCourses = (): Course[] => {
       return courses;
     }
   } catch (error) {
-    console.error("Failed to access sessionStorage for courses", error);
+    // If sessionStorage is not available (e.g., in SSR), return the initial in-memory data
     return courses;
   }
 };
 
 export const saveCourses = (newCourses: Course[]) => {
-  if (typeof window === 'undefined') {
-    courses = newCourses;
-    return;
-  }
   try {
-    courses = newCourses;
+    courses = newCourses; // Also update in-memory cache for SSR
     sessionStorage.setItem('courses', JSON.stringify(courses));
   } catch (error) {
     console.error("Failed to save courses to sessionStorage", error);
@@ -178,9 +171,6 @@ export const getCourseAttendance = (courseId: string): AttendanceRecord[] => {
 
 // User data management with sessionStorage
 export const getUsers = (): User[] => {
-  if (typeof window === 'undefined') {
-    return mockUsers;
-  }
   try {
     const storedUsers = sessionStorage.getItem('users');
     if (storedUsers) {
@@ -190,15 +180,12 @@ export const getUsers = (): User[] => {
       return mockUsers;
     }
   } catch (error) {
-    console.error("Failed to access sessionStorage for users", error);
+    // If sessionStorage is not available (e.g., in SSR), return the initial in-memory data
     return mockUsers;
   }
 };
 
 export const saveUsers = (users: User[]) => {
-  if (typeof window === 'undefined') {
-    return;
-  }
   try {
     sessionStorage.setItem('users', JSON.stringify(users));
   } catch (error) {
