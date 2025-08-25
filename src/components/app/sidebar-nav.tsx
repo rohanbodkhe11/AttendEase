@@ -47,10 +47,8 @@ export function SidebarNav({ user }: { user: User }) {
 
   return (
     <>
-      <SidebarHeader>
-        <div className="p-2">
-            <Logo />
-        </div>
+      <SidebarHeader className="items-center justify-center">
+        <Logo />
       </SidebarHeader>
       <Separator />
       <SidebarContent className="p-4">
