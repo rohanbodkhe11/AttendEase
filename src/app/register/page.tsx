@@ -102,7 +102,7 @@ export default function RegisterPage() {
             <Logo />
           </div>
           <CardTitle className="text-2xl font-bold">Create an Account</CardTitle>
-          <CardDescription>Join AttendEase today!</CardDescription>
+          <CardDescription>Join MIT CSN Attendance today!</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>

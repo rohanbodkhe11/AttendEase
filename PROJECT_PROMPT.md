@@ -1,11 +1,11 @@
 
-# **Project Prompt: AttendEase Web Application**
+# **Project Prompt: MIT CSN Attendance Web Application**
 
 ## **1. App Name**
-AttendEase
+MIT CSN Attendance
 
 ## **2. Elevator Pitch**
-AttendEase is a modern, AI-enhanced attendance management system designed for educational institutions. It provides separate, intuitive interfaces for faculty and students to streamline the process of marking, tracking, and reviewing attendance, ensuring accuracy and saving valuable time.
+MIT CSN Attendance is a modern, AI-enhanced attendance management system designed for educational institutions. It provides separate, intuitive interfaces for faculty and students to streamline the process of marking, tracking, and reviewing attendance, ensuring accuracy and saving valuable time.
 
 ## **3. Core Features**
 
@@ -86,4 +86,4 @@ AttendEase is a modern, AI-enhanced attendance management system designed for ed
 -   **Fonts**: `PT Sans` is used for both body and headline text.
 -   **Icons**: `lucide-react` is the designated icon library for a clean, modern aesthetic.
 -   **Layout**: The main application interface uses a two-column layout with a persistent sidebar for navigation and a main content area. The layout is responsive.
--   **Footer**: A footer with the text "© 2024 AttendEase. All rights reserved by Rohan." is present on all authenticated pages.
+-   **Footer**: A footer with the text "© 2024 MIT CSN Attendance. All rights reserved by Rohan." is present on all authenticated pages.

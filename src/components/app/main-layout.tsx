@@ -40,7 +40,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             {children}
           </main>
           <footer className="p-4 text-center text-sm text-muted-foreground">
-            © 2024 AttendEase. All rights reserved by Rohan.
+            © 2024 MIT CSN Attendance. All rights reserved by Rohan.
           </footer>
         </SidebarInset>
       </div>
