@@ -33,7 +33,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { useAuth } from "@/hooks/use-auth";
-import { Logo } from "@/components/app/logo";
 import { useToast } from "@/hooks/use-toast";
 
 const registerSchema = z.object({
@@ -41,6 +40,8 @@ const registerSchema = z.object({
   email: z.string().email({ message: "Invalid email address." }),
   password: z.string().min(6, { message: "Password must be at least 6 characters." }),
   role: z.enum(["student", "faculty"], { required_error: "You must select a role." }),
+  mobileNumber: z.string().regex(/^\d{10}$/, { message: "Please enter a valid 10-digit mobile number." }),
+  otp: z.string().min(6, { message: "OTP must be 6 digits." }),
   department: z.string().optional(),
   class: z.string().optional(),
 });
@@ -52,6 +53,7 @@ export default function RegisterPage() {
   const { register } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [isOtpSent, setIsOtpSent] = useState(false);
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -61,14 +63,32 @@ export default function RegisterPage() {
       password: "",
       department: "",
       class: "",
+      mobileNumber: "",
+      otp: "",
     },
   });
 
   const role = form.watch("role");
 
+  const handleSendOtp = () => {
+    // In a real app, this would trigger an API call to send an OTP
+    const mobileNumber = form.getValues("mobileNumber");
+    if (!/^\d{10}$/.test(mobileNumber)) {
+        form.setError("mobileNumber", { type: "manual", message: "Please enter a valid 10-digit mobile number." });
+        return;
+    }
+    console.log(`Sending OTP to ${mobileNumber}`);
+    toast({
+        title: "OTP Sent",
+        description: `An OTP has been sent to ${mobileNumber}.`,
+    });
+    setIsOtpSent(true);
+  }
+
   const onSubmit = (data: RegisterFormValues) => {
     setIsLoading(true);
     try {
+      // In a real app, you'd verify the OTP on the backend first
       const success = register(data);
       if (success) {
         toast({
@@ -98,9 +118,6 @@ export default function RegisterPage() {
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md shadow-2xl">
         <CardHeader className="space-y-4 text-center">
-          <div className="mx-auto">
-            <Logo />
-          </div>
           <CardTitle className="text-2xl font-bold">Create an Account</CardTitle>
           <CardDescription>Join MIT CSN Attendance today!</CardDescription>
         </CardHeader>
@@ -146,6 +163,39 @@ export default function RegisterPage() {
                   </FormItem>
                 )}
               />
+               <FormField
+                  control={form.control}
+                  name="mobileNumber"
+                  render={({ field }) => (
+                  <FormItem>
+                      <FormLabel>Mobile Number</FormLabel>
+                      <div className="flex gap-2">
+                        <FormControl>
+                            <Input placeholder="e.g., 9876543210" {...field} />
+                        </FormControl>
+                        <Button type="button" variant="outline" onClick={handleSendOtp} disabled={isOtpSent}>
+                            {isOtpSent ? "OTP Sent" : "Send OTP"}
+                        </Button>
+                      </div>
+                      <FormMessage />
+                  </FormItem>
+                  )}
+              />
+               {isOtpSent && (
+                 <FormField
+                    control={form.control}
+                    name="otp"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Enter OTP</FormLabel>
+                        <FormControl>
+                        <Input placeholder="Enter 6-digit OTP" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+               )}
               <FormField
                 control={form.control}
                 name="role"
@@ -215,7 +265,7 @@ export default function RegisterPage() {
                 />
               )}
 
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button type="submit" className="w-full" disabled={isLoading || !isOtpSent}>
                 {isLoading ? "Creating Account..." : "Create Account"}
               </Button>
             </form>

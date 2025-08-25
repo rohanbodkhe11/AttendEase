@@ -34,7 +34,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { useAuth } from "@/hooks/use-auth";
-import { Logo } from "@/components/app/logo";
 import { useToast } from "@/hooks/use-toast";
 
 const loginSchema = z.object({
@@ -91,7 +90,8 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
         <Card className="w-full max-w-md shadow-2xl">
           <CardHeader className="space-y-1 text-center">
-            <Logo />
+            <CardTitle className="text-2xl font-bold">Welcome to MIT CSN...!</CardTitle>
+            <CardDescription>Enter your credentials to access your account</CardDescription>
           </CardHeader>
           <CardContent>
             <Form {...form}>

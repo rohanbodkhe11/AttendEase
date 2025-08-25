@@ -11,6 +11,7 @@ export interface User {
   class?: string;
   avatarUrl?: string;
   rollNumber?: string;
+  mobileNumber?: string;
 }
 
 export interface Student {

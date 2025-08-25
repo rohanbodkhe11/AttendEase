@@ -12,7 +12,6 @@ import {
   sidebarMenuButtonVariants,
 } from "@/components/ui/sidebar";
 import { UserNav } from "./user-nav";
-import { Logo } from "./logo";
 import { Separator } from "../ui/separator";
 import { useAuth } from "@/hooks/use-auth";
 import type { User } from "@/lib/types";
@@ -47,8 +46,10 @@ export function SidebarNav({ user }: { user: User }) {
 
   return (
     <>
-      <SidebarHeader className="items-center justify-center">
-        <Logo />
+      <SidebarHeader className="flex items-center justify-center p-4">
+         <h1 className="text-xl font-bold tracking-tight text-foreground">
+            MIT CSN Attendance
+        </h1>
       </SidebarHeader>
       <Separator />
       <SidebarContent className="p-4">
