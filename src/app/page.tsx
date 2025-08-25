@@ -90,12 +90,8 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
         <Card className="w-full max-w-md shadow-2xl">
-          <CardHeader className="space-y-4 text-center">
-            <div className="mx-auto">
-              <Logo />
-            </div>
-            <CardTitle className="text-2xl font-bold">Welcome Back!</CardTitle>
-            <CardDescription>Enter your credentials to access your account</CardDescription>
+          <CardHeader className="space-y-1 text-center">
+            <Logo />
           </CardHeader>
           <CardContent>
             <Form {...form}>
