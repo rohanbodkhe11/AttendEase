@@ -7,7 +7,6 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from 'next/link';
-import Image from 'next/image';
 
 import { Button } from "@/components/ui/button";
 import {
@@ -19,7 +18,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -90,17 +88,8 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="relative min-h-screen">
-      <Image
-        src="https://placehold.co/1920x1080.png"
-        alt="A modern university campus building"
-        fill
-        className="object-cover"
-        data-ai-hint="university campus"
-      />
-      <div className="absolute inset-0 bg-black/50 z-10" />
-      <div className="relative z-20 flex min-h-screen items-center justify-center p-4">
-        <Card className="w-full max-w-md shadow-2xl bg-card/80 backdrop-blur-sm border-white/20">
+    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+        <Card className="w-full max-w-md shadow-2xl">
           <CardHeader className="space-y-1 text-center">
             <div className="mx-auto">
               <Logo />
@@ -171,6 +160,5 @@ export default function LoginPage() {
           </CardFooter>
         </Card>
       </div>
-    </div>
   );
 }
