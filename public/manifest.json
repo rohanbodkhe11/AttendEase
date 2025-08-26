@@ -1,7 +1,7 @@
 {
   "name": "MIT CSN Attendance",
   "short_name": "MIT CSN",
-  "description": "MIT CSN Attendance Management Application",
+  "description": "A modern attendance management application for MIT CSN.",
   "icons": [
     {
       "src": "/icon-192x192.png",
