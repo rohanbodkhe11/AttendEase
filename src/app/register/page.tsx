@@ -202,7 +202,7 @@ export default function RegisterPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Role</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={(value) => { field.onChange(value); }} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select a role" />
@@ -240,7 +240,7 @@ export default function RegisterPage() {
                       <FormItem>
                         <FormLabel>Class</FormLabel>
                         <FormControl>
-                          <Input placeholder="e.g., SY CSE A" {...field} value={field.value ?? ""} />
+                          <Input placeholder="e.g., SE CSE A" {...field} value={field.value ?? ""} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -265,14 +265,19 @@ export default function RegisterPage() {
                 />
               )}
 
-              <Button type="submit" className="w-full" disabled={isLoading || !isOtpSent}>
+              <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? "Creating Account..." : "Create Account"}
               </Button>
             </form>
           </Form>
-           <p className="mt-4 text-center text-sm text-muted-foreground">
-                Already have an account? <Link href="/" className="font-medium text-primary hover:underline">Sign In</Link>
-            </p>
+        </CardContent>
+        <CardContent className="mt-4">
+          <p className="text-center text-sm text-muted-foreground">
+            Already have an account?{" "}
+            <Link href="/" className="font-medium text-primary hover:underline">
+              Sign In
+            </Link>
+          </p>
         </CardContent>
       </Card>
     </div>
