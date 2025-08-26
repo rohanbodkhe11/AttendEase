@@ -90,7 +90,7 @@ export default function LoginPage() {
   return (
     <div className="relative flex min-h-screen items-center justify-center p-4">
         <Image
-            src="https://picsum.photos/1920/1080"
+            src="https://images.unsplash.com/photo-1562774053-701939374585?q=80&w=1920&auto=format&fit=crop"
             alt="MIT campus background"
             fill
             className="object-cover -z-10"
