@@ -99,7 +99,7 @@ export default function LoginPage() {
         <div className="absolute inset-0 bg-primary/80 -z-10" />
         <Card className="w-full max-w-md shadow-2xl z-10 bg-card/90 backdrop-blur-sm">
           <CardHeader className="space-y-1 text-center">
-            <CardTitle className="text-2xl font-bold">Welcome to MIT CSN...!</CardTitle>
+            <CardTitle className="text-2xl font-bold">MIT CSN Attendance...!</CardTitle>
             <CardDescription>Enter your credentials to access your account</CardDescription>
           </CardHeader>
           <CardContent>

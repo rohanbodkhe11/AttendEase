@@ -39,25 +39,15 @@ const Sidebar = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => {
-  const { isOpen } = useSidebar()
   return (
-    <>
-      <div
-        data-state={isOpen ? "open" : "closed"}
-        ref={ref}
-        className={cn(
-          "h-screen_ lg:h-auto_ fixed left-0 top-0 z-50 w-64 -translate-x-full border-r bg-background transition-transform duration-300 ease-in-out data-[state=open]:translate-x-0 lg:relative lg:z-auto lg:translate-x-0",
-          className
-        )}
-        {...props}
-      />
-      {isOpen && (
-        <div
-          onClick={() => useSidebar().setIsOpen(false)}
-          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
-        />
+    <div
+      ref={ref}
+      className={cn(
+        "h-screen w-64 border-r bg-background",
+        className
       )}
-    </>
+      {...props}
+    />
   )
 })
 Sidebar.displayName = "Sidebar"

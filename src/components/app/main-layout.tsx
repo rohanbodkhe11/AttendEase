@@ -32,7 +32,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   return (
     <SidebarProvider>
       <div className="flex min-h-screen">
-        <Sidebar>
+        <Sidebar className="flex flex-col">
             <SidebarNav user={user} />
         </Sidebar>
         <SidebarInset className="bg-gray-50 dark:bg-gray-900/50 flex flex-col">
