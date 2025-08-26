@@ -14,9 +14,9 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
+  CardFooter
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
@@ -43,7 +43,6 @@ const registerSchema = z.object({
   password: z.string().min(6, { message: "Password must be at least 6 characters." }),
   role: z.enum(["student", "faculty"], { required_error: "You must select a role." }),
   mobileNumber: z.string().regex(/^\d{10}$/, { message: "Please enter a valid 10-digit mobile number." }),
-  otp: z.string().min(6, { message: "OTP must be 6 digits." }),
   department: z.string().optional(),
   class: z.string().optional(),
 });
@@ -55,7 +54,6 @@ export default function RegisterPage() {
   const { register } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [isOtpSent, setIsOtpSent] = useState(false);
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -66,14 +64,12 @@ export default function RegisterPage() {
       department: "",
       class: "",
       mobileNumber: "",
-      otp: "",
     },
   });
 
   const onSubmit = (data: RegisterFormValues) => {
     setIsLoading(true);
     try {
-      // In a real app, you'd verify the OTP on the backend first
       const success = register(data);
       if (success) {
         toast({
@@ -100,21 +96,6 @@ export default function RegisterPage() {
   };
 
   const role = form.watch("role");
-
-  const handleSendOtp = () => {
-    // In a real app, this would trigger an API call to send an OTP
-    const mobileNumber = form.getValues("mobileNumber");
-    if (!/^\d{10}$/.test(mobileNumber)) {
-        form.setError("mobileNumber", { type: "manual", message: "Please enter a valid 10-digit mobile number." });
-        return;
-    }
-    console.log(`Sending OTP to ${mobileNumber}`);
-    toast({
-        title: "OTP Sent",
-        description: `An OTP has been sent to ${mobileNumber}. (This is a simulation)`,
-    });
-    setIsOtpSent(true);
-  }
 
   return (
     <div className="relative flex min-h-screen items-center justify-center p-4">
@@ -179,33 +160,13 @@ export default function RegisterPage() {
                   render={({ field }) => (
                   <FormItem>
                       <FormLabel>Mobile Number</FormLabel>
-                      <div className="flex gap-2">
                         <FormControl>
                             <Input placeholder="e.g., 9876543210" {...field} />
                         </FormControl>
-                        <Button type="button" variant="outline" onClick={handleSendOtp} disabled={isOtpSent}>
-                            {isOtpSent ? "OTP Sent" : "Send OTP"}
-                        </Button>
-                      </div>
                       <FormMessage />
                   </FormItem>
                   )}
               />
-               {isOtpSent && (
-                 <FormField
-                    control={form.control}
-                    name="otp"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Enter OTP</FormLabel>
-                        <FormControl>
-                        <Input placeholder="Enter 6-digit OTP" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
-               )}
               <FormField
                 control={form.control}
                 name="role"

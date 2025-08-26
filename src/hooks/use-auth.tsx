@@ -50,7 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return false;
   };
 
-  const register = (data: Omit<User, 'id' | 'avatarUrl' | 'attendance' | 'otp'>): boolean => {
+  const register = (data: Omit<User, 'id' | 'avatarUrl' | 'attendance' >): boolean => {
     const allUsers = getUsers();
     const existingUser = allUsers.find(u => u.email === data.email);
 
