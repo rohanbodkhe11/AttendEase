@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from 'next/link';
+import Image from 'next/image';
 
 import { Button } from "@/components/ui/button";
 import {
@@ -87,8 +88,16 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
-        <Card className="w-full max-w-md shadow-2xl">
+    <div className="relative flex min-h-screen items-center justify-center p-4">
+        <Image
+            src="https://picsum.photos/1920/1080"
+            alt="MIT campus background"
+            fill
+            className="object-cover -z-10"
+            data-ai-hint="university campus"
+        />
+        <div className="absolute inset-0 bg-primary/80 -z-10" />
+        <Card className="w-full max-w-md shadow-2xl z-10 bg-card/90 backdrop-blur-sm">
           <CardHeader className="space-y-1 text-center">
             <CardTitle className="text-2xl font-bold">Welcome to MIT CSN...!</CardTitle>
             <CardDescription>Enter your credentials to access your account</CardDescription>

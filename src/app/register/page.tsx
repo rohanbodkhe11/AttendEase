@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from 'next/link';
+import Image from 'next/image';
 
 import { Button } from "@/components/ui/button";
 import {
@@ -68,23 +69,6 @@ export default function RegisterPage() {
     },
   });
 
-  const role = form.watch("role");
-
-  const handleSendOtp = () => {
-    // In a real app, this would trigger an API call to send an OTP
-    const mobileNumber = form.getValues("mobileNumber");
-    if (!/^\d{10}$/.test(mobileNumber)) {
-        form.setError("mobileNumber", { type: "manual", message: "Please enter a valid 10-digit mobile number." });
-        return;
-    }
-    console.log(`Sending OTP to ${mobileNumber}`);
-    toast({
-        title: "OTP Sent",
-        description: `An OTP has been sent to ${mobileNumber}.`,
-    });
-    setIsOtpSent(true);
-  }
-
   const onSubmit = (data: RegisterFormValues) => {
     setIsLoading(true);
     try {
@@ -114,10 +98,35 @@ export default function RegisterPage() {
     }
   };
 
+  const role = form.watch("role");
+
+  const handleSendOtp = () => {
+    // In a real app, this would trigger an API call to send an OTP
+    const mobileNumber = form.getValues("mobileNumber");
+    if (!/^\d{10}$/.test(mobileNumber)) {
+        form.setError("mobileNumber", { type: "manual", message: "Please enter a valid 10-digit mobile number." });
+        return;
+    }
+    console.log(`Sending OTP to ${mobileNumber}`);
+    toast({
+        title: "OTP Sent",
+        description: `An OTP has been sent to ${mobileNumber}.`,
+    });
+    setIsOtpSent(true);
+  }
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md shadow-2xl">
-        <CardHeader className="space-y-4 text-center">
+    <div className="relative flex min-h-screen items-center justify-center p-4">
+        <Image
+            src="https://picsum.photos/1920/1080"
+            alt="MIT campus background"
+            fill
+            className="object-cover -z-10"
+            data-ai-hint="university building"
+        />
+        <div className="absolute inset-0 bg-primary/80 -z-10" />
+      <Card className="w-full max-w-md shadow-2xl z-10 bg-card/90 backdrop-blur-sm">
+        <CardHeader className="space-y-2 text-center">
           <CardTitle className="text-2xl font-bold">Create an Account</CardTitle>
           <CardDescription>Join MIT CSN Attendance today!</CardDescription>
         </CardHeader>
@@ -271,14 +280,14 @@ export default function RegisterPage() {
             </form>
           </Form>
         </CardContent>
-        <CardContent className="mt-4">
-          <p className="text-center text-sm text-muted-foreground">
-            Already have an account?{" "}
-            <Link href="/" className="font-medium text-primary hover:underline">
-              Sign In
-            </Link>
-          </p>
-        </CardContent>
+        <CardFooter className="flex flex-col space-y-2">
+            <p className="text-center text-sm text-muted-foreground">
+                Already have an account?{" "}
+                <Link href="/" className="font-medium text-primary hover:underline">
+                Sign In
+                </Link>
+            </p>
+        </CardFooter>
       </Card>
     </div>
   );
