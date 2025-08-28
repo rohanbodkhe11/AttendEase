@@ -12,6 +12,7 @@ export interface User {
   avatarUrl?: string;
   rollNumber?: string;
   mobileNumber?: string;
+  whatsappNumber?: string;
 }
 
 export interface Student {

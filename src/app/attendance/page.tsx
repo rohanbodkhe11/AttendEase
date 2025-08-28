@@ -4,8 +4,8 @@
 import { useEffect, useState, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
-import { getCourses, saveStudentsForCourse, getAttendance, saveAttendanceReport, getStudentsByClass, saveCourses, addStudentsToClass, saveNotifications } from '@/lib/data';
-import type { Student, AttendanceRecord as AttendanceRecordType, Course, Notification } from '@/lib/types';
+import { getCourses, saveStudentsForCourse, getAttendance, saveAttendanceReport, getStudentsByClass, saveCourses, addStudentsToClass, saveNotifications, getUsers } from '@/lib/data';
+import type { Student, AttendanceRecord as AttendanceRecordType, Course, Notification, User } from '@/lib/types';
 import {
   Select,
   SelectContent,
@@ -164,13 +164,14 @@ function AttendanceContent({ course, selectedClass, onStudentsImported }: { cour
   const [lectureDate, setLectureDate] = useState('');
   const [lectureTimeSlot, setLectureTimeSlot] = useState('');
   const router = useRouter();
-
+  const [allUsers, setAllUsers] = useState<User[]>([]);
 
   const [classStudents, setClassStudents] = useState<Student[]>([]);
   
   useEffect(() => {
     setPastAttendance(getAttendance());
     setClassStudents(getStudentsByClass(selectedClass));
+    setAllUsers(getUsers());
     
     const now = new Date();
     setLectureDate(now.toISOString().split('T')[0]);
@@ -223,12 +224,20 @@ function AttendanceContent({ course, selectedClass, onStudentsImported }: { cour
     saveAttendanceReport(report);
 
     const notifications: Notification[] = attendanceArray.map(att => {
+        const studentUser = allUsers.find(u => u.id === att.studentId);
         const status = att.isPresent ? 'Present' : 'Absent';
         const formattedDate = format(new Date(lectureDate), 'PPP');
+        const message = `Attendance marked for ${course.name}: You were ${status} on ${formattedDate} (${lectureTimeSlot}). Marked by ${course.facultyName}.`;
+        
+        // Simulate sending a WhatsApp message
+        if (studentUser?.whatsappNumber) {
+            console.log(`SIMULATING WHATSAPP to ${studentUser.whatsappNumber}: ${message}`);
+        }
+
         return {
             id: `notif-${Date.now()}-${att.studentId}`,
             studentId: att.studentId,
-            message: `Attendance marked for ${course.name}: You were ${status} on ${formattedDate} (${lectureTimeSlot}). Marked by ${course.facultyName}.`,
+            message: message,
             timestamp: new Date().toISOString(),
             isRead: false,
         };

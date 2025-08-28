@@ -43,6 +43,7 @@ const registerSchema = z.object({
   password: z.string().min(6, { message: "Password must be at least 6 characters." }),
   role: z.enum(["student", "faculty"], { required_error: "You must select a role." }),
   mobileNumber: z.string().regex(/^\d{10}$/, { message: "Please enter a valid 10-digit mobile number." }),
+  whatsappNumber: z.string().regex(/^\d{10}$/, { message: "Please enter a valid 10-digit WhatsApp number." }).optional().or(z.literal('')),
   department: z.string().optional(),
   class: z.string().optional(),
 });
@@ -64,6 +65,7 @@ export default function RegisterPage() {
       department: "",
       class: "",
       mobileNumber: "",
+      whatsappNumber: "",
     },
   });
 
@@ -95,7 +97,7 @@ export default function RegisterPage() {
     }
   };
 
-  const role = form.watch("role");
+  const role = form.getValues("role");
 
   return (
     <div className="relative flex min-h-screen items-center justify-center p-4">
@@ -167,13 +169,26 @@ export default function RegisterPage() {
                   </FormItem>
                   )}
               />
+               <FormField
+                  control={form.control}
+                  name="whatsappNumber"
+                  render={({ field }) => (
+                  <FormItem>
+                      <FormLabel>WhatsApp Number (Optional)</FormLabel>
+                        <FormControl>
+                            <Input placeholder="e.g., 9876543210" {...field} />
+                        </FormControl>
+                      <FormMessage />
+                  </FormItem>
+                  )}
+              />
               <FormField
                 control={form.control}
                 name="role"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Role</FormLabel>
-                    <Select onValueChange={(value) => { field.onChange(value); }} defaultValue={field.value}>
+                    <Select onValueChange={(value) => { field.onChange(value); form.trigger('role'); }} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select a role" />
