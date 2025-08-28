@@ -113,7 +113,7 @@ export default function RegisterPage() {
             <div className="mx-auto">
                 <Logo />
             </div>
-          <CardDescription>Join Attenease today!</CardDescription>
+          <CardDescription>Join AttendEase today!</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -125,7 +125,7 @@ export default function RegisterPage() {
                   <FormItem>
                     <FormLabel>Full Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="John Doe" {...field} />
+                      <Input placeholder="rupesh patil" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

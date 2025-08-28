@@ -7,7 +7,7 @@ export function Logo() {
         <path d="M22.5 19.5V33H28.5V27H34.5V19.5C34.5 17.25 32.7 15 30 15H27C24.3 15 22.5 17.25 22.5 19.5Z" fill="hsl(var(--accent))"/>
         </svg>
       <h1 className="text-2xl font-bold tracking-tight text-foreground">
-        Attenease
+        AttendEase
       </h1>
     </div>
   );
