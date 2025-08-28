@@ -4,7 +4,7 @@ import { Toaster } from "@/components/ui/toaster"
 import { AuthProvider } from '@/hooks/use-auth';
 
 export const metadata: Metadata = {
-  title: 'MIT CSN Attendance',
+  title: 'Attenease',
   description: 'A modern attendance management application.',
   manifest: '/manifest.json',
 };

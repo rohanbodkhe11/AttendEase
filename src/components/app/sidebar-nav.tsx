@@ -18,6 +18,7 @@ import type { User } from "@/lib/types";
 import { LayoutDashboard, BookCheck, BookUser, LogOut, BookCopy, FileText } from "lucide-react";
 import { Button } from "../ui/button";
 import { cn } from "@/lib/utils";
+import { Logo } from "./logo";
 
 const facultyNavItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -47,9 +48,7 @@ export function SidebarNav({ user }: { user: User }) {
   return (
     <>
       <SidebarHeader className="flex items-center justify-center p-4">
-         <h1 className="text-xl font-bold tracking-tight text-foreground">
-            MIT CSN Attendance
-        </h1>
+         <Logo />
       </SidebarHeader>
       <Separator />
       <SidebarContent className="p-4">

@@ -229,11 +229,6 @@ function AttendanceContent({ course, selectedClass, onStudentsImported }: { cour
         const formattedDate = format(new Date(lectureDate), 'PPP');
         const message = `Attendance marked for ${course.name}: You were ${status} on ${formattedDate} (${lectureTimeSlot}). Marked by ${course.facultyName}.`;
         
-        // Simulate sending a WhatsApp message
-        if (studentUser?.whatsappNumber) {
-            console.log(`SIMULATING WHATSAPP to ${studentUser.whatsappNumber}: ${message}`);
-        }
-
         return {
             id: `notif-${Date.now()}-${att.studentId}`,
             studentId: att.studentId,

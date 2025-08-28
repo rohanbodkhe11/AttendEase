@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/form";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
+import { Logo } from "@/components/app/logo";
 
 const registerSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -43,7 +44,6 @@ const registerSchema = z.object({
   password: z.string().min(6, { message: "Password must be at least 6 characters." }),
   role: z.enum(["student", "faculty"], { required_error: "You must select a role." }),
   mobileNumber: z.string().regex(/^\d{10}$/, { message: "Please enter a valid 10-digit mobile number." }),
-  whatsappNumber: z.string().regex(/^\d{10}$/, { message: "Please enter a valid 10-digit WhatsApp number." }).optional().or(z.literal('')),
   department: z.string().optional(),
   class: z.string().optional(),
 });
@@ -65,7 +65,6 @@ export default function RegisterPage() {
       department: "",
       class: "",
       mobileNumber: "",
-      whatsappNumber: "",
     },
   });
 
@@ -97,13 +96,13 @@ export default function RegisterPage() {
     }
   };
 
-  const role = form.getValues("role");
+  const role = form.watch("role");
 
   return (
     <div className="relative flex min-h-screen items-center justify-center p-4">
         <Image
             src="https://images.unsplash.com/photo-1562774053-701939374585?q=80&w=1920&auto=format&fit=crop"
-            alt="MIT campus background"
+            alt="University building background"
             fill
             className="object-cover -z-10"
             data-ai-hint="university building"
@@ -111,8 +110,10 @@ export default function RegisterPage() {
         <div className="absolute inset-0 bg-primary/80 -z-10" />
       <Card className="w-full max-w-md shadow-2xl z-10 bg-card/90 backdrop-blur-sm">
         <CardHeader className="space-y-2 text-center">
-          <CardTitle className="text-2xl font-bold">Create an Account</CardTitle>
-          <CardDescription>Join MIT CSN Attendance today!</CardDescription>
+            <div className="mx-auto">
+                <Logo />
+            </div>
+          <CardDescription>Join Attenease today!</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -162,19 +163,6 @@ export default function RegisterPage() {
                   render={({ field }) => (
                   <FormItem>
                       <FormLabel>Mobile Number</FormLabel>
-                        <FormControl>
-                            <Input placeholder="e.g., 9876543210" {...field} />
-                        </FormControl>
-                      <FormMessage />
-                  </FormItem>
-                  )}
-              />
-               <FormField
-                  control={form.control}
-                  name="whatsappNumber"
-                  render={({ field }) => (
-                  <FormItem>
-                      <FormLabel>WhatsApp Number (Optional)</FormLabel>
                         <FormControl>
                             <Input placeholder="e.g., 9876543210" {...field} />
                         </FormControl>

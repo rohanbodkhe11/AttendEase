@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/form";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
+import { Logo } from "@/components/app/logo";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Invalid email address." }),
@@ -91,7 +92,7 @@ export default function LoginPage() {
     <div className="relative flex min-h-screen items-center justify-center p-4">
         <Image
             src="https://images.unsplash.com/photo-1562774053-701939374585?q=80&w=1920&auto=format&fit=crop"
-            alt="MIT campus background"
+            alt="University campus background"
             fill
             className="object-cover -z-10"
             data-ai-hint="university campus"
@@ -99,7 +100,9 @@ export default function LoginPage() {
         <div className="absolute inset-0 bg-primary/80 -z-10" />
         <Card className="w-full max-w-md shadow-2xl z-10 bg-card/90 backdrop-blur-sm">
           <CardHeader className="space-y-1 text-center">
-            <CardTitle className="text-2xl font-bold">MIT CSN Attendance...!</CardTitle>
+            <div className="mx-auto">
+                <Logo />
+            </div>
             <CardDescription>Enter your credentials to access your account</CardDescription>
           </CardHeader>
           <CardContent>
