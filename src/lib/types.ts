@@ -57,3 +57,11 @@ export interface AttendanceReport {
     isPresent: boolean;
   }[];
 }
+
+export interface Notification {
+  id: string;
+  studentId: string;
+  message: string;
+  timestamp: string;
+  isRead: boolean;
+}

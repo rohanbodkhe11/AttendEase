@@ -1,5 +1,5 @@
 
-import type { User, Course, Student, AttendanceRecord, AttendanceReport } from './types';
+import type { User, Course, Student, AttendanceRecord, AttendanceReport, Notification } from './types';
 
 // This will now act as our in-memory "database"
 let users: User[] = [];
@@ -7,6 +7,7 @@ let courses: Course[] = [];
 let attendance: AttendanceRecord[] = [];
 let courseStudents: Record<string, Student[]> = {};
 let attendanceReports: AttendanceReport[] = [];
+let notifications: Notification[] = [];
 
 // Flag to ensure initialization only runs once
 let isInitialized = false;
@@ -15,6 +16,17 @@ let isInitialized = false;
 function saveDataToSession() {
   // This function is a placeholder for a real database.
   // In this prototype, data is only stored in-memory for the session.
+}
+
+// --- Notification Management ---
+export const getNotificationsForStudent = (studentId: string): Notification[] => {
+    return notifications.filter(n => n.studentId === studentId).sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+}
+
+export const saveNotifications = (newNotifications: Notification[]) => {
+    notifications.push(...newNotifications);
+    saveDataToSession();
+    console.log("Saved notifications:", newNotifications); // For debugging
 }
 
 // --- Student Management for Courses ---
@@ -173,6 +185,7 @@ function initializeData() {
       department: 'Computer Science',
       class: 'SE CSE A',
       avatarUrl: 'https://placehold.co/100x100.png',
+      mobileNumber: '9876543210'
     },
     {
       id: 'student2',
@@ -184,6 +197,7 @@ function initializeData() {
       department: 'Computer Science',
       class: 'SE CSE A',
       avatarUrl: 'https://placehold.co/100x100.png',
+      mobileNumber: '9876543211'
     },
      {
       id: 'student3',
@@ -195,6 +209,7 @@ function initializeData() {
       department: 'Computer Science',
       class: 'SE CSE B',
       avatarUrl: 'https://placehold.co/100x100.png',
+      mobileNumber: '9876543212'
     },
     {
       id: 'faculty1',

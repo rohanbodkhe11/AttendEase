@@ -4,8 +4,8 @@
 import { useEffect, useState, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
-import { getCourses, saveStudentsForCourse, getAttendance, saveAttendanceReport, getStudentsByClass, saveCourses, addStudentsToClass } from '@/lib/data';
-import type { Student, AttendanceRecord as AttendanceRecordType, Course } from '@/lib/types';
+import { getCourses, saveStudentsForCourse, getAttendance, saveAttendanceReport, getStudentsByClass, saveCourses, addStudentsToClass, saveNotifications } from '@/lib/data';
+import type { Student, AttendanceRecord as AttendanceRecordType, Course, Notification } from '@/lib/types';
 import {
   Select,
   SelectContent,
@@ -29,6 +29,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { format } from 'date-fns';
 
 
 export default function AttendancePage() {
@@ -156,6 +157,7 @@ const practicalTimeSlots = [
 
 
 function AttendanceContent({ course, selectedClass, onStudentsImported }: { course: Course, selectedClass: string, onStudentsImported: () => void }) {
+  const { user } = useAuth();
   const [currentAttendance, setCurrentAttendance] = useState<Map<string, boolean>>(new Map());
   const { toast } = useToast();
   const [pastAttendance, setPastAttendance] = useState<AttendanceRecordType[]>([]);
@@ -219,9 +221,23 @@ function AttendanceContent({ course, selectedClass, onStudentsImported }: { cour
     };
     
     saveAttendanceReport(report);
+
+    const notifications: Notification[] = attendanceArray.map(att => {
+        const status = att.isPresent ? 'Present' : 'Absent';
+        const formattedDate = format(new Date(lectureDate), 'PPP');
+        return {
+            id: `notif-${Date.now()}-${att.studentId}`,
+            studentId: att.studentId,
+            message: `Attendance marked for ${course.name}: You were ${status} on ${formattedDate} (${lectureTimeSlot}). Marked by ${course.facultyName}.`,
+            timestamp: new Date().toISOString(),
+            isRead: false,
+        };
+    });
+    saveNotifications(notifications);
+
     toast({
       title: "Attendance Submitted",
-      description: `Attendance for ${course?.name} has been saved.`,
+      description: `Attendance for ${course?.name} has been saved and notifications have been sent.`,
     })
     
     router.push(`/reports/${report.id}`);
