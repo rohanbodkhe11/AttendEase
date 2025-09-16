@@ -57,8 +57,8 @@ const courseSchema = z.object({
 
 type CourseFormValues = z.infer<typeof courseSchema>;
 
-const years = ['FE', 'SE', 'TE', 'BE'];
-const departments = ['CSE', 'IT', 'ENTC', 'Mech', 'Civil', 'AI & DS'];
+const years = ['FY', 'SY', 'TY', 'Final Y'];
+const departments = ['CSE', 'ECE', 'ENTC', 'PPE','MECHTRO', 'Mech', 'Civil', 'AI & DS'];
 const divisions = ['A', 'B', 'C', 'D'];
 
 export default function NewCoursePage() {
