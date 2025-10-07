@@ -1,7 +1,3 @@
-
-            • AttendEase •
-
-
 # 🧠 AttendEase – AI-Powered Attendance Management System
 
 ## 🚀 Overview
@@ -125,8 +121,8 @@ The Smart Review feature enhances faculty efficiency by automatically reviewing 
 
 🧑‍💻 Author
 
-Rohan Santosh Bodke
-MIT CSN – Department of Computer Science
+Rohan Bodkhe
+– Department of Electronics and Computer Engineering 
 © 2025 AttendEase. All rights reserved.
 
 
