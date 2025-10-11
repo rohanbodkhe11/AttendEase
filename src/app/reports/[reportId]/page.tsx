@@ -4,16 +4,17 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
-import { getAttendanceReportById } from '@/lib/data';
+import { getAttendanceReportById, getUsers } from '@/lib/data';
 import type { AttendanceReport } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, UserCheck, UserX } from 'lucide-react';
+import { ArrowLeft, UserCheck, UserX, Download } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 import { format } from 'date-fns';
+import { utils, writeFile } from 'xlsx';
 
 export default function ReportDetailPage() {
   const { user, isLoading: authLoading } = useAuth();
@@ -56,6 +57,29 @@ export default function ReportDetailPage() {
   const presentStudents = report.attendance.filter(a => a.isPresent).length;
   const absentStudents = report.attendance.length - presentStudents;
 
+  const handleDownload = () => {
+    if (!report) return;
+
+    const allUsers = getUsers();
+    const data = report.attendance.map(att => {
+      const student = allUsers.find(u => u.id === att.studentId);
+      return {
+        'Roll No.': att.rollNumber,
+        'Student Name': att.studentName,
+        'Department with yr': student ? `${student.department} - ${student.class}` : 'N/A',
+        'Date': format(new Date(report.date), 'PPPP'),
+        'Lecture no with time': report.timeSlot,
+        'Status': att.isPresent ? 'Present' : 'Absent'
+      };
+    });
+
+    const ws = utils.json_to_sheet(data);
+    const wb = utils.book_new();
+    utils.book_append_sheet(wb, ws, 'Attendance');
+
+    writeFile(wb, `Attendance-Report-${report.courseCode}-${report.date}.xlsx`);
+  };
+
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
        <div className="flex items-center gap-4">
@@ -65,6 +89,12 @@ export default function ReportDetailPage() {
           </Link>
         </Button>
         <h2 className="text-3xl font-bold tracking-tight">Attendance Report</h2>
+        <div className="ml-auto">
+          <Button onClick={handleDownload}>
+            <Download className="mr-2 h-4 w-4" />
+            Download Report
+          </Button>
+        </div>
       </div>
 
        <Card>
@@ -149,4 +179,3 @@ function ReportDetailSkeleton() {
         </div>
     );
 }
-
